@@ -4,7 +4,7 @@
  */
 
 // 1. API & Backend
-export const API_BASE = import.meta.env.VITE_API_BASE || '/api/v1';
+export const API_BASE = import.meta.env.VITE_API_BASE || (import.meta.env.VITE_BACKEND_URL ? (import.meta.env.VITE_BACKEND_URL.endsWith('/api/v1') ? import.meta.env.VITE_BACKEND_URL : `${import.meta.env.VITE_BACKEND_URL.replace(/\/+$/, '')}/api/v1`) : '/api/v1');
 
 // 2. Thông tin thương hiệu
 export const APP_TITLE = import.meta.env.VITE_APP_TITLE || 'Phúc Thanh Audio';

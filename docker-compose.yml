@@ -1,6 +1,16 @@
 version: '3.8'
 
 services:
+  redis:
+    image: redis:7-alpine
+    container_name: phucthanh-redis
+    restart: unless-stopped
+    command: redis-server --appendonly yes
+    volumes:
+      - redis-data:/data
+    networks:
+      - phucthanh-net
+
   backend:
     build:
       context: ./backend
@@ -8,12 +18,17 @@ services:
     container_name: phucthanh-backend
     restart: unless-stopped
     ports:
-      - "8000:8000"
+      - "5799:8000"
     env_file:
-      - .env
+      - ./backend/.env
+    environment:
+      - REDIS_HOST=redis
+      - REDIS_PORT=6379
     volumes:
       - ./backend:/app/backend
       - ./input:/app/input
+    depends_on:
+      - redis
     networks:
       - phucthanh-net
 
@@ -24,9 +39,8 @@ services:
     container_name: phucthanh-frontend
     restart: unless-stopped
     ports:
-      - "5173:5173"
+      - "3000:5173"
     env_file:
-      - .env
       - ./frontend/.env
     environment:
       - BACKEND_URL=http://backend:8000
@@ -37,6 +51,9 @@ services:
       - backend
     networks:
       - phucthanh-net
+
+volumes:
+  redis-data:
 
 networks:
   phucthanh-net:
