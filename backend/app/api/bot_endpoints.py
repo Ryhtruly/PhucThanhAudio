@@ -21,6 +21,7 @@ bot_router = APIRouter(tags=["Bot Endpoints (NV1 - NV7)"])
 class BotContractRequest(BaseModel):
     mst: str
     phone: str
+    company_name: Optional[str] = ""
     contract_type: Optional[str] = "Cung cấp & Lắp đặt hệ thống âm thanh"
     total_amount: Optional[int] = 0
     items: Optional[List[Dict[str, Any]]] = None
@@ -73,7 +74,8 @@ def bot_nv1_create_contract(req: BotContractRequest):
         total_amount=req.total_amount or 0,
         special_terms=req.special_terms or "",
         sales_rep=req.sales_rep or "Nguyễn Văn Tuấn",
-        send_zbs=req.send_zbs if req.send_zbs is not None else True
+        send_zbs=req.send_zbs if req.send_zbs is not None else True,
+        company_name=req.company_name or None
     )
     if not res.get("success"):
         return {

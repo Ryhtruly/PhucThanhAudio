@@ -18,11 +18,15 @@ def create_contract(
     warranty_months: int = 24,
     special_terms: str = "Bảo hành 1 đổi 1 trong 30 ngày đầu tiên nếu có lỗi kỹ thuật từ nhà sản xuất.",
     sales_rep: str = "Nguyễn Văn Tuấn",
-    send_zbs: bool = False
+    send_zbs: bool = False,
+    company_name: Optional[str] = None
 ) -> Dict[str, Any]:
-    # 1. Tra MST tự động
+    # 1. Tra MST tự động từ VietQR API
     tax_info = lookup_tax_info(mst)
-    company_name = tax_info.get("company_name", "Công ty đối tác") if tax_info.get("success") else "Khách hàng"
+    if tax_info.get("success") and tax_info.get("company_name"):
+        company_name = tax_info.get("company_name")
+    elif not company_name:
+        company_name = "Khách hàng"
     address = tax_info.get("address", "")
     representative = tax_info.get("representative", "")
     
