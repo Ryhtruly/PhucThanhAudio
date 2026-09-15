@@ -16,7 +16,7 @@ Skill này phục vụ nhu cầu điều hành của CEO và Ban Giám Đốc Ph
 
 ## 2. Gọi Backend API
 
-- **Endpoint:** `GET https://perky-grasp-sponge.ngrok-free.dev/api/nv7/kpi/report`
+- **Endpoint:** `GET https://phucthanhaudio.wiai.vn/api/nv7/kpi/report`
 - **Headers:**
   - `ngrok-skip-browser-warning: true`
 - **Method:** `GET`

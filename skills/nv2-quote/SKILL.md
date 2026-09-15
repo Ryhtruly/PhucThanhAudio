@@ -23,7 +23,7 @@ Kích hoạt khi người dùng có ý định xin/lập báo giá:
 
 ## 3. Gọi Backend API
 
-- **Endpoint:** `POST https://perky-grasp-sponge.ngrok-free.dev/api/nv2/quote`
+- **Endpoint:** `POST https://phucthanhaudio.wiai.vn/api/nv2/quote`
 - **Headers:**
   - `Content-Type: application/json`
   - `ngrok-skip-browser-warning: true`
@@ -77,7 +77,7 @@ Backend xử lý tính toán tổng tiền, VAT, tạo mã `BG-xxxx`, sinh file 
     "• **Dự án:** Gói âm thanh Lounge & Rooftop Bar",
     "• **Khách hàng:** Công ty Cổ phần Giải trí SkyLight (Anh Nguyễn Hoàng Dũng - 0912345678)",
     "• **Tổng cộng:** `239,800,000 đ`",
-    "• **Tải file Word .docx:** [Tải Báo Giá](https://perky-grasp-sponge.ngrok-free.dev/api/v1/quotes/BG-2026-0812/BG-2026-0812.docx)",
+    "• **Tải file Word .docx:** [Tải Báo Giá](https://phucthanhaudio.wiai.vn/api/v1/quotes/BG-2026-0812/BG-2026-0812.docx)",
     "• **Thông báo ZBS:** Đã kích hoạt"
   ],
   "data": { ... }

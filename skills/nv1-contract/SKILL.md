@@ -23,7 +23,7 @@ Kích hoạt khi người dùng chat các câu có ý định tạo/lập hợp 
 
 ## 3. Gọi Backend API
 
-- **Endpoint:** `POST https://perky-grasp-sponge.ngrok-free.dev/api/nv1/contract`
+- **Endpoint:** `POST https://phucthanhaudio.wiai.vn/api/nv1/contract`
 - **Headers:**
   - `Content-Type: application/json`
   - `ngrok-skip-browser-warning: true`
@@ -67,7 +67,7 @@ Backend sẽ trả về JSON theo chuẩn:
     "• **Bên mua:** CÔNG TY TNHH GIẢI TRÍ ĐỈNH CAO (MST: `0312345678`)",
     "• **Tổng giá trị (kèm VAT):** `275,000,000 đ`",
     "• **Bằng chữ:** *Hai trăm bảy mươi lăm triệu đồng chẵn*",
-    "• **Tải file Word .docx:** [Tải Hợp Đồng](https://perky-grasp-sponge.ngrok-free.dev/api/v1/contracts/HD-2026-0312345678/HD-2026-0312345678.docx)",
+    "• **Tải file Word .docx:** [Tải Hợp Đồng](https://phucthanhaudio.wiai.vn/api/v1/contracts/HD-2026-0312345678/HD-2026-0312345678.docx)",
     "• **Trạng thái:** Chờ ký duyệt | ZBS thông báo: Đã gửi"
   ],
   "data": { ... }

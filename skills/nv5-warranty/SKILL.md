@@ -18,7 +18,7 @@ Khi có thông báo hỏng hóc hoặc yêu cầu bảo hành:
 - *"Khách hàng báo vang số Digisynthetic mất nguồn, cần thợ qua kiểm tra"*
 
 ### Gọi Backend API:
-- **Endpoint:** `POST https://perky-grasp-sponge.ngrok-free.dev/api/nv5/warranty/start`
+- **Endpoint:** `POST https://phucthanhaudio.wiai.vn/api/nv5/warranty/start`
 - **Headers:**
   - `Content-Type: application/json`
   - `ngrok-skip-browser-warning: true`
@@ -65,7 +65,7 @@ Khi KTV đã khắc phục xong sự cố tại công trình hoặc tại xưở
 - *"Đã bàn giao xong thiết bị cho khách ở phiếu BH-01"*
 
 ### Gọi Backend API:
-- **Endpoint:** `PUT https://perky-grasp-sponge.ngrok-free.dev/api/nv5/warranty/{ticket_code}/complete?note=...`
+- **Endpoint:** `PUT https://phucthanhaudio.wiai.vn/api/nv5/warranty/{ticket_code}/complete?note=...`
 - **Headers:**
   - `Content-Type: application/json`
   - `ngrok-skip-browser-warning: true`

@@ -1,27 +1,36 @@
 # BỘ SKILL CHO BOT TƯƠNG TÁC HỆ THỐNG PHÚC THANH AUDIO
 
-Tài liệu hướng dẫn và tập hợp các Skills dành cho **AI Bot (Telegram / OpenClaw / Zalo Bot)** tương tác trực tiếp với Backend FastAPI của **Phúc Thanh Audio Group** qua đường hầm **ngrok công khai**.
+Tài liệu hướng dẫn và tập hợp các Skills dành cho **AI Bot (Telegram / OpenClaw / Zalo Bot)** tương tác trực tiếp với Backend FastAPI của **Phúc Thanh Audio Group** trên máy chủ đã deploy chính thức: **`https://phucthanhaudio.wiai.vn`**.
 
 ---
 
-## 1. Địa Chỉ Máy Chủ (Ngrok Base URL)
+## 1. Thông Tin Máy Chủ & Cổng Dịch Vụ (Deployment Info)
 
-- **Base URL hiện tại:** `https://perky-grasp-sponge.ngrok-free.dev`
-- **Môi trường nội bộ:** `http://localhost:8000`
-- **Lưu ý:** Khi Bot gọi HTTP Request, nên kèm Header:
-  ```http
-  ngrok-skip-browser-warning: true
-  Content-Type: application/json
-  ```
+- **Domain Máy Chủ:** `https://phucthanhaudio.wiai.vn`
+- **Giao diện Quản Trị Web (Frontend):** `https://phucthanhaudio.wiai.vn/` *(Cổng nội bộ Docker: 5173)*
+- **API Backend & Bot Endpoints:** `https://phucthanhaudio.wiai.vn/api/...` *(Cổng nội bộ Docker: 8000)*
+- **Tài khoản đăng nhập Web Quản Trị:**
+  - **Tài khoản / Email:** `admin@phucthanhaudio.vn` *(hoặc `admin`)*
+  - **Mật khẩu:** `PhucThanh@2026` *(hoặc `admin123`)*
 
 ---
 
-## 2. Nguyên Tắc Phân Vai (Role Boundary)
+## 2. Cơ Chế Lưu Trữ Dữ Liệu Kép (Database Persistence)
+
+Mọi thao tác tạo Hợp đồng, Báo giá, Tiếp nhận Bảo hành hoặc Quản lý Lead qua Bot API **đều được tự động lưu vĩnh viễn vào hệ thống**:
+1. **Lưu SQLite Database nội bộ (`phucthanh.db`):** Đảm bảo dữ liệu tức thì, không phụ thuộc mạng ngoài.
+2. **Đồng bộ Airtable Cloud:** Tự động ghi bản ghi lên các bảng tương ứng trên Airtable.
+3. **Hiển thị trực tiếp trên Web Dashboard:** Màn hình quản trị tự động hợp nhất dữ liệu từ SQLite DB và Airtable, giúp bản ghi tạo từ Bot xuất hiện ngay trên giao diện web mà không bị thất lạc.
+4. **Kết xuất file Word chuẩn ISO:** Lưu trực tiếp tại `/app/output/` và cho phép tải về với đường dẫn công khai `https://phucthanhaudio.wiai.vn/api/v1/contracts/{id}/{id}.docx`.
+
+---
+
+## 3. Nguyên Tắc Phân Vai (Role Boundary)
 
 - **CON BOT = Miệng + Tai + Tay:**
   - **Tai:** Lắng nghe tin nhắn từ khách hàng, KTV, Sales, hoặc CEO (NLU phân loại ý định, trích xuất thông tin như MST, SĐT, mã lỗi, tên thiết bị...).
   - **Não phụ:** Quyết định gọi skill nào, hỏi lại người dùng nếu thiếu thông tin bắt buộc (`action: "ASK"`).
-  - **Tay:** Gọi HTTP API Backend FastAPI (`https://perky-grasp-sponge.ngrok-free.dev/api/...`).
+  - **Tay:** Gọi HTTP API Backend FastAPI (`https://phucthanhaudio.wiai.vn/api/...`).
   - **Miệng:** Nhận kết quả từ backend, hiển thị trực tiếp danh sách `blocks[]` markdown cho người dùng chat. Không tự chế biến số liệu hay tính thuế/tổng tiền.
 
 - **HỆ THỐNG BACKEND = Não chính + Bộ nhớ + Màn hình:**
@@ -29,7 +38,7 @@ Tài liệu hướng dẫn và tập hợp các Skills dành cho **AI Bot (Teleg
 
 ---
 
-## 3. Chuẩn Giao Thức Gọi API & Dữ Liệu Phản Hồi
+## 4. Chuẩn Giao Thức Gọi API & Dữ Liệu Phản Hồi
 
 Tất cả các endpoint dành cho Bot đều trả về JSON đồng nhất:
 ```json
@@ -48,14 +57,14 @@ Tất cả các endpoint dành cho Bot đều trả về JSON đồng nhất:
 
 ---
 
-## 4. Danh Mục Các Skills (NV1 - NV7)
+## 5. Danh Mục Các Skills (NV1 - NV7)
 
-| Skill | Tên Kỹ Năng | Endpoint Trực Tiếp (Ngrok) | Method | Vai Trò Phục Vụ |
+| Skill | Tên Kỹ Năng | Endpoint Trực Tiếp | Method | Vai Trò Phục Vụ |
 |---|---|---|---|---|
-| [**nv1-contract**](./nv1-contract/SKILL.md) | Tạo Hợp Đồng Tự Động 1-Click | `https://perky-grasp-sponge.ngrok-free.dev/api/nv1/contract` | `POST` | Sales, Kế toán |
-| [**nv2-quote**](./nv2-quote/SKILL.md) | Báo Giá Tự Động ISO | `https://perky-grasp-sponge.ngrok-free.dev/api/nv2/quote` | `POST` | Sales Kỹ Thuật |
-| [**nv3-pipeline**](./nv3-pipeline/SKILL.md) | Quét Lead & Cập Nhật Pipeline | `https://perky-grasp-sponge.ngrok-free.dev/api/nv3/morning_scan`<br>`https://perky-grasp-sponge.ngrok-free.dev/api/nv3/deal/{id}` | `POST`<br>`PUT` | Sales, Trưởng phòng KD |
-| [**nv4-zbs**](./nv4-zbs/SKILL.md) | Gửi Tin Nhắn Zalo ZBS WIFIM | `https://perky-grasp-sponge.ngrok-free.dev/api/nv4/zbs/send` | `POST` | CSKH, Marketing |
-| [**nv5-warranty**](./nv5-warranty/SKILL.md) | Tiếp Nhận & Hoàn Thành Bảo Hành | `https://perky-grasp-sponge.ngrok-free.dev/api/nv5/warranty/start`<br>`https://perky-grasp-sponge.ngrok-free.dev/api/nv5/warranty/{id}/complete` | `POST`<br>`PUT` | Kỹ thuật viên (KTV), Khách hàng |
-| [**nv6-inventory**](./nv6-inventory/SKILL.md) | Kiểm Tra Tồn Kho & Cảnh Báo Hết Hàng | `https://perky-grasp-sponge.ngrok-free.dev/api/nv6/stock/check` | `GET` | Thủ kho, Mua hàng |
-| [**nv7-kpi**](./nv7-kpi/SKILL.md) | Báo Cáo KPI & Doanh Thu CEO | `https://perky-grasp-sponge.ngrok-free.dev/api/nv7/kpi/report` | `GET` | Ban Giám Đốc, CEO |
+| [**nv1-contract**](./nv1-contract/SKILL.md) | Tạo Hợp Đồng Tự Động 1-Click | `https://phucthanhaudio.wiai.vn/api/nv1/contract` | `POST` | Sales, Kế toán |
+| [**nv2-quote**](./nv2-quote/SKILL.md) | Báo Giá Tự Động ISO | `https://phucthanhaudio.wiai.vn/api/nv2/quote` | `POST` | Sales Kỹ Thuật |
+| [**nv3-pipeline**](./nv3-pipeline/SKILL.md) | Quét Lead & Cập Nhật Pipeline | `https://phucthanhaudio.wiai.vn/api/nv3/morning_scan`<br>`https://phucthanhaudio.wiai.vn/api/nv3/deal/{id}` | `POST`<br>`PUT` | Sales, Trưởng phòng KD |
+| [**nv4-zbs**](./nv4-zbs/SKILL.md) | Gửi Tin Nhắn Zalo ZBS WIFIM | `https://phucthanhaudio.wiai.vn/api/nv4/zbs/send` | `POST` | CSKH, Marketing |
+| [**nv5-warranty**](./nv5-warranty/SKILL.md) | Tiếp Nhận & Hoàn Thành Bảo Hành | `https://phucthanhaudio.wiai.vn/api/nv5/warranty/start`<br>`https://phucthanhaudio.wiai.vn/api/nv5/warranty/{id}/complete` | `POST`<br>`PUT` | Kỹ thuật viên (KTV), Khách hàng |
+| [**nv6-inventory**](./nv6-inventory/SKILL.md) | Kiểm Tra Tồn Kho & Cảnh Báo Hết Hàng | `https://phucthanhaudio.wiai.vn/api/nv6/stock/check` | `GET` | Thủ kho, Mua hàng |
+| [**nv7-kpi**](./nv7-kpi/SKILL.md) | Báo Cáo KPI & Doanh Thu CEO | `https://phucthanhaudio.wiai.vn/api/nv7/kpi/report` | `GET` | Ban Giám Đốc, CEO |

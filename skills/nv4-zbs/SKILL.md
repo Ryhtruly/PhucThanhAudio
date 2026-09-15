@@ -20,7 +20,7 @@ Skill này cho phép Bot hoặc nhân viên CSKH/Marketing kích hoạt gửi ti
 
 ## 3. Gọi Backend API
 
-- **Endpoint:** `POST https://perky-grasp-sponge.ngrok-free.dev/api/nv4/zbs/send`
+- **Endpoint:** `POST https://phucthanhaudio.wiai.vn/api/nv4/zbs/send`
 - **Headers:**
   - `Content-Type: application/json`
   - `ngrok-skip-browser-warning: true`
@@ -34,7 +34,7 @@ Skill này cho phép Bot hoặc nhân viên CSKH/Marketing kích hoạt gửi ti
     "customer_name": "Anh Tuấn",
     "contract_code": "HD-2026-0312345678",
     "amount": "275,000,000 đ",
-    "download_link": "https://perky-grasp-sponge.ngrok-free.dev/hd/2026"
+    "download_link": "https://phucthanhaudio.wiai.vn/hd/2026"
   }
 }
 ```

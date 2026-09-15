@@ -21,7 +21,7 @@ Skill này phục vụ 2 nghiệp vụ chính của Sales:
   - *"Tình hình pipeline bán hàng hiện tại"*
 
 ### Gọi API Backend:
-- **Endpoint:** `POST https://perky-grasp-sponge.ngrok-free.dev/api/nv3/morning_scan`
+- **Endpoint:** `POST https://phucthanhaudio.wiai.vn/api/nv3/morning_scan`
 - **Headers:**
   - `Content-Type: application/json`
   - `ngrok-skip-browser-warning: true`
@@ -64,7 +64,7 @@ Hệ thống hỗ trợ 5 giai đoạn:
 - `Lost`: Thất bại / Hủy dự án
 
 ### Gọi API Backend:
-- **Endpoint:** `PUT https://perky-grasp-sponge.ngrok-free.dev/api/nv3/deal/{deal_id_hoac_sdt}`
+- **Endpoint:** `PUT https://phucthanhaudio.wiai.vn/api/nv3/deal/{deal_id_hoac_sdt}`
 - **Headers:**
   - `Content-Type: application/json`
   - `ngrok-skip-browser-warning: true`

@@ -51,7 +51,33 @@ def api_create_contract(req: ContractCreateRequest):
 
 @router.get("/contracts")
 def api_list_contracts():
-    return airtable_client.list_records("Hop dong")
+    airtable_recs = airtable_client.list_records("Hop dong") or []
+    existing_codes = {r.get("fields", {}).get("Ma HD") for r in airtable_recs if r.get("fields", {}).get("Ma HD")}
+
+    try:
+        from app.core.database import SessionLocal
+        from app.models.db_models import Contract as DBContract
+        db = SessionLocal()
+        db_contracts = db.query(DBContract).order_by(DBContract.id.desc()).all()
+        for c in db_contracts:
+            if c.contract_code and c.contract_code not in existing_codes:
+                airtable_recs.insert(0, {
+                    "id": c.id,
+                    "fields": {
+                        "Ma HD": c.contract_code,
+                        "Nguoi ky KH": c.company_name or c.representative or "Khách hàng",
+                        "MST KH": c.tax_id or "",
+                        "Loai HD": c.contract_type or "Cung cấp thiết bị",
+                        "Gia tri HD": c.grand_total or 0,
+                        "Trang thai": c.status or "Cho ky"
+                    }
+                })
+                existing_codes.add(c.contract_code)
+        db.close()
+    except Exception as e:
+        print("[api_list_contracts DB sync error]:", e)
+
+    return airtable_recs
 
 # NV2: Tạo Báo giá ISO
 @router.post("/quotes")
@@ -76,7 +102,33 @@ def api_create_quote(req: QuoteCreateRequest):
 
 @router.get("/quotes")
 def api_list_quotes():
-    return airtable_client.list_records("Bao gia")
+    airtable_recs = airtable_client.list_records("Bao gia") or []
+    existing_codes = {r.get("fields", {}).get("Ma bao gia") for r in airtable_recs if r.get("fields", {}).get("Ma bao gia")}
+
+    try:
+        from app.core.database import SessionLocal
+        from app.models.db_models import Quote as DBQuote
+        db = SessionLocal()
+        db_quotes = db.query(DBQuote).order_by(DBQuote.id.desc()).all()
+        for q in db_quotes:
+            if q.quote_code and q.quote_code not in existing_codes:
+                airtable_recs.insert(0, {
+                    "id": q.id,
+                    "fields": {
+                        "Ma bao gia": q.quote_code,
+                        "Ten du an": q.company_name or "Trang bị âm thanh",
+                        "Nguoi lien he": q.contact_name or "",
+                        "So dien thoai": q.phone or "",
+                        "Tong cong gia tri": q.grand_total or 0,
+                        "Trang thai": q.status or "Moi"
+                    }
+                })
+                existing_codes.add(q.quote_code)
+        db.close()
+    except Exception as e:
+        print("[api_list_quotes DB sync error]:", e)
+
+    return airtable_recs
 
 # NV3: Lead & Pipeline
 @router.post("/leads")
@@ -96,7 +148,36 @@ def api_create_lead(req: LeadCreateRequest):
 
 @router.get("/leads")
 def api_list_leads():
-    return airtable_client.list_records("Lead & Pipeline")
+    airtable_recs = airtable_client.list_records("Lead & Pipeline") or []
+    existing_phones = {r.get("fields", {}).get("So dien thoai") for r in airtable_recs if r.get("fields", {}).get("So dien thoai")}
+
+    try:
+        from app.core.database import SessionLocal
+        from app.models.db_models import Lead as DBLead
+        db = SessionLocal()
+        db_leads = db.query(DBLead).order_by(DBLead.id.desc()).all()
+        for l in db_leads:
+            if l.phone and l.phone not in existing_phones:
+                airtable_recs.insert(0, {
+                    "id": l.id,
+                    "fields": {
+                        "Ten cty Khach": l.company_name or "",
+                        "Nguoi lien he": l.contact_name or "",
+                        "So dien thoai": l.phone or "",
+                        "Email": l.email or "",
+                        "Nguon lead": l.source or "Web form",
+                        "Nhu cau Du an": l.demand or "",
+                        "Stage": l.stage or "New",
+                        "Lead Score": l.lead_score or 60,
+                        "Gia tri uoc tinh": l.estimated_value or 0
+                    }
+                })
+                existing_phones.add(l.phone)
+        db.close()
+    except Exception as e:
+        print("[api_list_leads DB sync error]:", e)
+
+    return airtable_recs
 
 # NV4: ZBS WIFIM
 @router.get("/zbs/templates")
@@ -132,7 +213,36 @@ def api_create_warranty(req: WarrantyCreateRequest):
 
 @router.get("/warranties")
 def api_list_warranties():
-    return airtable_client.list_records("Phieu Bao hanh")
+    airtable_recs = airtable_client.list_records("Phieu Bao hanh") or []
+    existing_codes = {r.get("fields", {}).get("Ma phieu BH") for r in airtable_recs if r.get("fields", {}).get("Ma phieu BH")}
+
+    try:
+        from app.core.database import SessionLocal
+        from app.models.db_models import WarrantyTicket as DBWarrantyTicket
+        db = SessionLocal()
+        db_tickets = db.query(DBWarrantyTicket).order_by(DBWarrantyTicket.id.desc()).all()
+        for t in db_tickets:
+            if t.ticket_code and t.ticket_code not in existing_codes:
+                airtable_recs.insert(0, {
+                    "id": t.id,
+                    "fields": {
+                        "Ma phieu BH": t.ticket_code,
+                        "Ten thiet bi": t.device_name or "",
+                        "Model": t.model or "",
+                        "Serial Number": t.serial_number or "",
+                        "Mo ta loi": t.error_desc or "",
+                        "Khach hang": t.customer_name or "",
+                        "So dien thoai": t.phone or "",
+                        "Trang thai": t.status or "Tiep nhan",
+                        "Muc do": t.urgency or "Thuong"
+                    }
+                })
+                existing_codes.add(t.ticket_code)
+        db.close()
+    except Exception as e:
+        print("[api_list_warranties DB sync error]:", e)
+
+    return airtable_recs
 
 # NV6: Tồn kho
 @router.get("/inventory/alerts")

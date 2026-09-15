@@ -16,7 +16,7 @@ Skill này giúp Thủ kho, Nhân viên mua hàng hoặc Quản lý kiểm tra n
 
 ## 2. Gọi Backend API
 
-- **Endpoint:** `GET https://perky-grasp-sponge.ngrok-free.dev/api/nv6/stock/check`
+- **Endpoint:** `GET https://phucthanhaudio.wiai.vn/api/nv6/stock/check`
 - **Headers:**
   - `ngrok-skip-browser-warning: true`
 - **Method:** `GET`
