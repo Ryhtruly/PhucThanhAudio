@@ -1,0 +1,228 @@
+/* Local Bundled Font Be Vietnam Pro - Ho tro 100% Tieng Viet khong loi font */
+@font-face {
+  font-family: 'Be Vietnam Pro';
+  font-style: normal;
+  font-weight: 400;
+  font-display: block;
+  src: url('/fonts/bevietnampro-400.ttf') format('truetype');
+}
+
+@font-face {
+  font-family: 'Be Vietnam Pro';
+  font-style: normal;
+  font-weight: 500;
+  font-display: block;
+  src: url('/fonts/bevietnampro-400.ttf') format('truetype');
+}
+
+@font-face {
+  font-family: 'Be Vietnam Pro';
+  font-style: normal;
+  font-weight: 600;
+  font-display: block;
+  src: url('/fonts/bevietnampro-600.ttf') format('truetype');
+}
+
+@font-face {
+  font-family: 'Be Vietnam Pro';
+  font-style: normal;
+  font-weight: 700;
+  font-display: block;
+  src: url('/fonts/bevietnampro-700.ttf') format('truetype');
+}
+
+@font-face {
+  font-family: 'Be Vietnam Pro';
+  font-style: normal;
+  font-weight: 800;
+  font-display: block;
+  src: url('/fonts/bevietnampro-800.ttf') format('truetype');
+}
+
+/* Pure Corporate Executive Light Theme */
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+html, body, #root {
+  background-color: #F8FAFC !important;
+  color: #1E293B !important;
+  font-family: 'Be Vietnam Pro', Arial, 'Segoe UI', Tahoma, sans-serif !important;
+  min-height: 100vh;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* Typography Hierarchy - Clean, Modern, Not Overwhelming */
+.page-title {
+  font-size: 20px !important;
+  font-weight: 700 !important;
+  color: #0F172A !important;
+  letter-spacing: -0.015em;
+  margin: 0;
+}
+.page-subtitle {
+  font-size: 13px !important;
+  color: #64748B !important;
+  margin-top: 4px;
+  font-weight: 400;
+  line-height: 1.5;
+}
+
+.section-title {
+  font-size: 15px !important;
+  font-weight: 700 !important;
+  color: #0F172A !important;
+  letter-spacing: -0.01em;
+}
+
+/* Card Styling - Generous Whitespace & Soft Shadows */
+.white-card, .glass-panel {
+  background: #FFFFFF !important;
+  border: 1px solid #E2E8F0 !important;
+  border-radius: 12px !important;
+  box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.04), 0 1px 2px -1px rgba(0, 0, 0, 0.04) !important;
+  color: #1E293B !important;
+  transition: all 0.2s ease;
+}
+.white-card:hover, .glass-panel:hover {
+  border-color: #CBD5E1 !important;
+  box-shadow: 0 4px 12px -2px rgba(0, 0, 0, 0.06) !important;
+}
+
+/* Primary Crimson Button */
+.btn-primary {
+  background: linear-gradient(135deg, #E51837 0%, #B90D22 100%) !important;
+  color: #FFFFFF !important;
+  border: none !important;
+  font-family: 'Be Vietnam Pro', Arial, 'Segoe UI', Tahoma, sans-serif;
+  font-weight: 600 !important;
+  font-size: 13px !important;
+  padding: 8px 18px;
+  border-radius: 8px;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  box-shadow: 0 2px 8px rgba(229, 24, 55, 0.25) !important;
+  transition: all 0.15s ease;
+}
+.btn-primary:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 14px rgba(229, 24, 55, 0.35) !important;
+}
+
+/* Secondary Button */
+.btn-secondary {
+  background: #FFFFFF !important;
+  color: #334155 !important;
+  border: 1px solid #CBD5E1 !important;
+  font-family: 'Be Vietnam Pro', Arial, 'Segoe UI', Tahoma, sans-serif;
+  font-weight: 500;
+  font-size: 12.5px;
+  padding: 6px 14px;
+  border-radius: 8px;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  transition: all 0.15s ease;
+}
+.btn-secondary:hover {
+  background: #F1F5F9 !important;
+  border-color: #94A3B8 !important;
+  color: #0F172A !important;
+}
+
+/* Form Inputs */
+.input-field {
+  width: 100%;
+  background: #FFFFFF !important;
+  border: 1px solid #CBD5E1 !important;
+  border-radius: 8px;
+  color: #0F172A !important;
+  padding: 9px 13px;
+  font-size: 13px;
+  font-family: 'Be Vietnam Pro', Arial, 'Segoe UI', Tahoma, sans-serif;
+  outline: none;
+  transition: all 0.15s ease;
+}
+.input-field:focus {
+  border-color: #D31027 !important;
+  box-shadow: 0 0 0 3px rgba(211, 16, 39, 0.1) !important;
+}
+.input-field::placeholder {
+  color: #94A3B8 !important;
+}
+
+/* Badges */
+.badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 3px 8px;
+  border-radius: 6px;
+  font-size: 11px;
+  font-weight: 600;
+}
+.badge-red { background: #FEF2F2 !important; color: #DC2626 !important; border: 1px solid #FEE2E2 !important; }
+.badge-gold { background: #FFFBEB !important; color: #D97706 !important; border: 1px solid #FEF3C7 !important; }
+.badge-green { background: #F0FDF4 !important; color: #16A34A !important; border: 1px solid #DCFCE7 !important; }
+.badge-blue { background: #F0F9FF !important; color: #0284C7 !important; border: 1px solid #E0F2FE !important; }
+
+/* Partner brand pills */
+.brand-pill {
+  padding: 4px 9px;
+  background: #FFFFFF;
+  border: 1px solid #E2E8F0;
+  border-radius: 6px;
+  font-size: 11px;
+  font-weight: 500;
+  color: #475569;
+  transition: all 0.15s ease;
+}
+.brand-pill:hover {
+  background: #FEF2F2;
+  color: #DC2626;
+  border-color: #FECACA;
+}
+
+/* Custom Scrollbar */
+::-webkit-scrollbar { width: 6px; height: 6px; }
+::-webkit-scrollbar-track { background: #F8FAFC; }
+::-webkit-scrollbar-thumb { background: #CBD5E1; border-radius: 3px; }
+::-webkit-scrollbar-thumb:hover { background: #94A3B8; }
+
+/* Professional Corporate Data Table */
+.data-table {
+  width: 100% !important;
+  border-collapse: collapse !important;
+  text-align: left;
+  font-size: 13px;
+}
+.data-table thead tr {
+  background: #F8FAFC;
+  border-bottom: 2px solid #E2E8F0;
+}
+.data-table th {
+  padding: 13px 16px;
+  font-size: 11.5px;
+  font-weight: 700;
+  color: #475569;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  white-space: nowrap;
+}
+.data-table td {
+  padding: 14px 16px;
+  vertical-align: middle;
+  border-bottom: 1px solid #F1F5F9;
+}
+.data-table tbody tr {
+  transition: background-color 0.15s ease;
+}
+.data-table tbody tr:hover {
+  background-color: #F8FAFC;
+}
