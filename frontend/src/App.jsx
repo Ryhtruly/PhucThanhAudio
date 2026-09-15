@@ -778,7 +778,7 @@ export default function App() {
                   type="email"
                   required
                   className="input-field"
-                  placeholder="admin@phucthanhaudio.vn"
+                  placeholder="name@phucthanhaudio.vn"
                   value={loginForm.email}
                   onChange={e => setLoginForm({...loginForm, email: e.target.value})}
                   style={{ paddingLeft: 38, fontSize: 13.5 }}
@@ -811,7 +811,7 @@ export default function App() {
                   type={showPassword ? 'text' : 'password'}
                   required
                   className="input-field"
-                  placeholder="Nhập mật khẩu (VD: PhucThanh@2026)"
+                  placeholder="••••••••••••"
                   value={loginForm.password}
                   onChange={e => setLoginForm({...loginForm, password: e.target.value})}
                   style={{ paddingLeft: 38, paddingRight: 40, fontSize: 13.5 }}
@@ -873,34 +873,7 @@ export default function App() {
             </button>
           </form>
 
-          {/* Hộp thông tin tài khoản đăng nhập */}
-          <div style={{
-            marginTop: 20,
-            padding: '12px 16px',
-            background: '#F8FAFC',
-            border: '1px solid #E2E8F0',
-            borderRadius: 10,
-            fontSize: 12,
-            color: '#475569'
-          }}>
-            <div style={{ fontWeight: 700, color: '#0F172A', marginBottom: 6, display: 'flex', alignItems: 'center', gap: 6 }}>
-              <span>🔐</span> Thông tin tài khoản quản trị:
-            </div>
-            <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 4 }}>
-              <span>Email:</span>
-              <code style={{ color: '#D31027', fontWeight: 700, background: '#FFFFFF', padding: '1px 8px', borderRadius: 4, border: '1px solid #E2E8F0' }}>
-                admin@phucthanhaudio.vn
-              </code>
-            </div>
-            <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-              <span>Mật khẩu:</span>
-              <code style={{ color: '#0F172A', fontWeight: 700, background: '#FFFFFF', padding: '1px 8px', borderRadius: 4, border: '1px solid #E2E8F0' }}>
-                PhucThanh@2026
-              </code>
-            </div>
-          </div>
-
-          <div style={{ textAlign: 'center', marginTop: 18 }}>
+          <div style={{ textAlign: 'center', marginTop: 24, paddingTop: 16, borderTop: '1px solid #F1F5F9' }}>
             <p style={{ fontSize: 11, color: '#94A3B8', margin: 0 }}>
               Bản quyền © 2026 Phúc Thanh Audio Group • Bảo mật dữ liệu nội bộ
             </p>
