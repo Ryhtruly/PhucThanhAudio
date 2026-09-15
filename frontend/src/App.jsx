@@ -44,7 +44,7 @@ export default function App() {
     }
   });
   const [loginForm, setLoginForm] = useState({
-    email: 'admin@phucthanhaudio.vn',
+    email: '',
     password: ''
   });
   const [showPassword, setShowPassword] = useState(false);
@@ -54,28 +54,37 @@ export default function App() {
   const handleLogin = (e) => {
     if (e) e.preventDefault();
     setLoginError('');
+
+    const inputEmail = (loginForm.email || '').trim().toLowerCase();
+    const inputPass = (loginForm.password || '').trim();
+
+    if (!inputEmail || !inputPass) {
+      setLoginError('Vui lòng nhập đầy đủ Email và Mật khẩu!');
+      return;
+    }
+
     setLoginLoading(true);
 
     setTimeout(() => {
+      // Kiểm tra thông tin đăng nhập
+      const isValidEmail = inputEmail === 'admin@phucthanhaudio.vn' || inputEmail === 'admin';
+      const isValidPassword = inputPass === 'PhucThanh@2026' || inputPass === 'admin123';
+
+      if (!isValidEmail || !isValidPassword) {
+        setLoginLoading(false);
+        setLoginError('Email hoặc mật khẩu không chính xác! Vui lòng thử lại.');
+        return;
+      }
+
       const user = {
         ...DEFAULT_ACCOUNT,
-        email: loginForm.email || DEFAULT_ACCOUNT.email
+        email: 'admin@phucthanhaudio.vn'
       };
       setCurrentUser(user);
       localStorage.setItem('phucthanh_user_session', JSON.stringify(user));
       setLoginLoading(false);
       showToast(`Đăng nhập thành công: ${user.name}!`);
-    }, 300);
-  };
-
-  const handleQuickLogin = () => {
-    setLoginLoading(true);
-    setTimeout(() => {
-      setCurrentUser(DEFAULT_ACCOUNT);
-      localStorage.setItem('phucthanh_user_session', JSON.stringify(DEFAULT_ACCOUNT));
-      setLoginLoading(false);
-      showToast(`Đăng nhập thành công!`);
-    }, 200);
+    }, 350);
   };
 
   const handleLogout = () => {
@@ -802,7 +811,7 @@ export default function App() {
                   type={showPassword ? 'text' : 'password'}
                   required
                   className="input-field"
-                  placeholder="Nhập mật khẩu (tùy ý hoặc demo)"
+                  placeholder="Nhập mật khẩu (VD: PhucThanh@2026)"
                   value={loginForm.password}
                   onChange={e => setLoginForm({...loginForm, password: e.target.value})}
                   style={{ paddingLeft: 38, paddingRight: 40, fontSize: 13.5 }}
@@ -860,51 +869,35 @@ export default function App() {
                 marginTop: 4
               }}
             >
-              {loginLoading ? 'Đang xác thực bảo mật...' : 'Đăng Nhập Vào Hệ Thống'}
+              {loginLoading ? 'Đang xác thực thông tin...' : 'Đăng Nhập Quản Trị'}
             </button>
           </form>
 
-          {/* Quick Access Single 1-Click Button */}
+          {/* Hộp thông tin tài khoản đăng nhập */}
           <div style={{
             marginTop: 20,
-            paddingTop: 16,
-            borderTop: '1px solid #E2E8F0',
-            textAlign: 'center'
+            padding: '12px 16px',
+            background: '#F8FAFC',
+            border: '1px solid #E2E8F0',
+            borderRadius: 10,
+            fontSize: 12,
+            color: '#475569'
           }}>
-            <button
-              type="button"
-              onClick={handleQuickLogin}
-              disabled={loginLoading}
-              style={{
-                width: '100%',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                gap: 8,
-                padding: '10px 14px',
-                background: '#F8FAFC',
-                border: '1px dashed #CBD5E1',
-                borderRadius: 8,
-                color: '#475569',
-                fontSize: 12.5,
-                fontWeight: 600,
-                cursor: 'pointer',
-                transition: 'all 0.15s ease'
-              }}
-              onMouseEnter={e => {
-                e.currentTarget.style.background = '#FEF2F2';
-                e.currentTarget.style.borderColor = '#FCA5A5';
-                e.currentTarget.style.color = '#D31027';
-              }}
-              onMouseLeave={e => {
-                e.currentTarget.style.background = '#F8FAFC';
-                e.currentTarget.style.borderColor = '#CBD5E1';
-                e.currentTarget.style.color = '#475569';
-              }}
-            >
-              <span>⚡</span>
-              <span>Đăng nhập nhanh 1-Click (Tài khoản Quản trị)</span>
-            </button>
+            <div style={{ fontWeight: 700, color: '#0F172A', marginBottom: 6, display: 'flex', alignItems: 'center', gap: 6 }}>
+              <span>🔐</span> Thông tin tài khoản quản trị:
+            </div>
+            <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 4 }}>
+              <span>Email:</span>
+              <code style={{ color: '#D31027', fontWeight: 700, background: '#FFFFFF', padding: '1px 8px', borderRadius: 4, border: '1px solid #E2E8F0' }}>
+                admin@phucthanhaudio.vn
+              </code>
+            </div>
+            <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+              <span>Mật khẩu:</span>
+              <code style={{ color: '#0F172A', fontWeight: 700, background: '#FFFFFF', padding: '1px 8px', borderRadius: 4, border: '1px solid #E2E8F0' }}>
+                PhucThanh@2026
+              </code>
+            </div>
           </div>
 
           <div style={{ textAlign: 'center', marginTop: 18 }}>
