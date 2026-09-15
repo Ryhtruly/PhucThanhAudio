@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
+import { API_BASE, HOTLINE, ZALO_URL } from '../config';
 
-const API_BASE = '/api/v1';
 
 export default function PublicIntakePage() {
   const [solutions, setSolutions] = useState([]);
@@ -229,7 +229,7 @@ export default function PublicIntakePage() {
 
             <div style={{ display: 'flex', gap: 10, justifyContent: 'center' }}>
               <a
-                href="https://zalo.me/0909112233"
+                href={ZALO_URL}
                 target="_blank"
                 rel="noreferrer"
                 style={{
@@ -242,7 +242,7 @@ export default function PublicIntakePage() {
                   fontWeight: 700
                 }}
               >
-                Nhắn Zalo Kỹ Sư (0909.112.233)
+                Nhắn Zalo Kỹ Sư ({HOTLINE})
               </a>
               <button
                 type="button"

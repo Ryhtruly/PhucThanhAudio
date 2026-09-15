@@ -2,7 +2,7 @@ import PublicIntakePage from './pages/PublicIntakePage';
 import React, { useState, useEffect } from 'react';
 import { Trash2, Lock, Mail, LogOut, Eye, EyeOff } from 'lucide-react';
 
-const API_BASE = '/api/v1';
+import { API_BASE, APP_TITLE, APP_SUBTITLE, COMPANY_NAME, COMPANY_ADDRESS, HOTLINE, ZALO_URL, getPublicIntakeUrl } from './config';
 
 const BRANDS = [
   "LSS Advanced Speakers", "SR Made in Italy", "Studiomaster",
@@ -2251,7 +2251,7 @@ export default function App() {
                   </div>
                   <div style={{ background: '#F8FAFC', padding: 14, borderRadius: 12, border: '1px solid #E2E8F0', display: 'inline-block', marginBottom: 14 }}>
                     <img
-                      src={`https://api.qrserver.com/v1/create-qr-code/?size=240x240&data=${encodeURIComponent(window.location.origin + '/intake')}`}
+                      src={`https://api.qrserver.com/v1/create-qr-code/?size=240x240&data=${encodeURIComponent(getPublicIntakeUrl())}`}
                       alt="QR Code"
                       style={{ width: 220, height: 220, display: 'block' }}
                     />
@@ -2262,7 +2262,7 @@ export default function App() {
                   <div style={{ display: 'flex', gap: 8 }}>
                     <button
                       onClick={() => {
-                        navigator.clipboard.writeText(window.location.origin + '/intake');
+                        navigator.clipboard.writeText(getPublicIntakeUrl());
                         showToast('Đã copy link form tiếp nhận Zalo!');
                         setShowPipelineQrModal(false);
                       }}

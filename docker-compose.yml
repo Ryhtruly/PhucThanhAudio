@@ -27,6 +27,7 @@ services:
       - "5173:5173"
     env_file:
       - .env
+      - ./frontend/.env
     environment:
       - BACKEND_URL=http://backend:8000
     volumes:
