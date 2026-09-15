@@ -57,7 +57,7 @@ Tất cả các endpoint dành cho Bot đều trả về JSON đồng nhất:
 
 ---
 
-## 5. Danh Mục Các Skills (NV1 - NV7)
+## 5. Danh Mục Các Skills (NV1 - NV8)
 
 | Skill | Tên Kỹ Năng | Endpoint Trực Tiếp | Method | Vai Trò Phục Vụ |
 |---|---|---|---|---|
@@ -68,3 +68,5 @@ Tất cả các endpoint dành cho Bot đều trả về JSON đồng nhất:
 | [**nv5-warranty**](./nv5-warranty/SKILL.md) | Tiếp Nhận & Hoàn Thành Bảo Hành | `https://phucthanhaudio.wiai.vn/api/nv5/warranty/start`<br>`https://phucthanhaudio.wiai.vn/api/nv5/warranty/{id}/complete` | `POST`<br>`PUT` | Kỹ thuật viên (KTV), Khách hàng |
 | [**nv6-inventory**](./nv6-inventory/SKILL.md) | Kiểm Tra Tồn Kho & Cảnh Báo Hết Hàng | `https://phucthanhaudio.wiai.vn/api/nv6/stock/check` | `GET` | Thủ kho, Mua hàng |
 | [**nv7-kpi**](./nv7-kpi/SKILL.md) | Báo Cáo KPI & Doanh Thu CEO | `https://phucthanhaudio.wiai.vn/api/nv7/kpi/report` | `GET` | Ban Giám Đốc, CEO |
+| [**nv8-intake**](./nv8-intake/SKILL.md) | Đăng Ký Tư Vấn & Báo Giá Nhanh | `https://phucthanhaudio.wiai.vn/api/nv8/intake`<br>`https://phucthanhaudio.wiai.vn/api/nv8/intake/solutions` | `POST`<br>`GET` | Khách hàng, Tiếp nhận Lead |
+

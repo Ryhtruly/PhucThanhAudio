@@ -60,6 +60,24 @@ class BotZBSSendRequest(BaseModel):
     template_id: str
     template_data: Dict[str, Any]
 
+class BotIntakeRequest(BaseModel):
+    customer_name: str
+    phone: str
+    package_id: Optional[str] = "karaoke_vip"
+    package_name: Optional[str] = "Karaoke VIP & Lounge"
+    solution_type: Optional[str] = "Phòng Karaoke Kinh Doanh Cao Cấp"
+    contact_name: Optional[str] = ""
+    email: Optional[str] = ""
+    tax_id: Optional[str] = ""
+    address: Optional[str] = ""
+    scale_info: Optional[str] = ""
+    preferred_brand: Optional[str] = "Chính hãng (SR Italy, LSS, Verity Audio)"
+    estimated_budget: Optional[int] = 0
+    notes: Optional[str] = ""
+    source: Optional[str] = "AI Bot Intake"
+    send_zbs: Optional[bool] = False
+
+
 # =========================================================================
 # NV1: TẠO HỢP ĐỒNG TỰ ĐỘNG 1-CLICK (POST /api/nv1/contract)
 # =========================================================================
@@ -376,3 +394,177 @@ def bot_nv7_kpi_report():
         "blocks": blocks,
         "data": kpi
     }
+
+# =========================================================================
+# NV8: ĐĂNG KÝ TƯ VẤN & BÁO GIÁ NHANH (POST /api/nv8/intake & GET /api/nv8/intake/solutions)
+# =========================================================================
+@bot_router.get("/nv8/intake/solutions")
+def bot_nv8_intake_solutions():
+    """Bot gọi để lấy danh sách 4 nhóm gói giải pháp âm thanh chuyên nghiệp Phúc Thanh Audio."""
+    from app.api.v1.endpoints import AUDIO_SOLUTION_PACKAGES
+    blocks = [
+        "🎵 **Danh Mục Giải Pháp Âm Thanh Chuyên Nghiệp — Phúc Thanh Audio**",
+        "1. **Karaoke VIP & Lounge** (`karaoke_vip`): Dành cho chuỗi kinh doanh Karaoke chuyên nghiệp, biệt thự gia đình cao cấp.",
+        "2. **Hội Trường & Nhà Thi Đấu** (`hoi_truong`): Hệ thống Line Array và micro hội nghị sảnh tiệc cưới, UBND, trường học.",
+        "3. **Bar Club & Sân Khấu Biểu Diễn** (`bar_club`): Giải pháp Beer Club, Vũ trường, DJ Bar âm thanh uy lực.",
+        "4. **Cafe Acoustic & PA Shop** (`pa_cafe`): Âm thanh nhạc nền (BGM) siêu thị, nhà hàng, spa và truyền thanh công cộng.",
+        "\n💡 *Ví dụ mẫu: 'Đăng ký tư vấn gói Karaoke VIP cho quán King Club ở Quận 1, SĐT 0909123456, ngân sách 250 triệu'*"
+    ]
+    return {
+        "action": "ANSWER",
+        "blocks": blocks,
+        "data": AUDIO_SOLUTION_PACKAGES
+    }
+
+@bot_router.post("/nv8/intake")
+def bot_nv8_create_intake(req: BotIntakeRequest):
+    """Bot gọi khi tiếp nhận yêu cầu tư vấn/báo giá từ khách hàng, tự động lưu Database, Airtable và CRM."""
+    import random
+    from datetime import date
+    from app.core.database import SessionLocal
+    from app.models.db_models import Lead as DBLead, Customer as DBCustomer
+
+    phone = "".join(c for c in req.phone if c.isdigit())
+    if phone.startswith("84") and len(phone) >= 10:
+        phone = "0" + phone[2:]
+
+    if not phone or len(phone) < 9:
+        return {
+            "action": "ASK",
+            "blocks": ["⚠️ Vui lòng cung cấp **Số điện thoại / Zalo** của người liên hệ để kỹ sư Phúc Thanh Audio gửi phương án báo giá."],
+            "data": {"missing_field": "phone"}
+        }
+
+    cust_name = (req.customer_name or "").strip()
+    if not cust_name:
+        return {
+            "action": "ASK",
+            "blocks": ["⚠️ Vui lòng cung cấp **Tên Quán, Tên Dự Án hoặc Tên Doanh Nghiệp** cần tư vấn âm thanh."],
+            "data": {"missing_field": "customer_name"}
+        }
+
+    contact = (req.contact_name or cust_name).strip()
+    budget = req.estimated_budget or 0
+
+    # Tính lead score
+    lead_score = 55
+    if budget >= 500000000:
+        lead_score += 35
+    elif budget >= 200000000:
+        lead_score += 25
+    elif budget >= 100000000:
+        lead_score += 15
+    elif budget >= 50000000:
+        lead_score += 10
+    if req.tax_id and len(req.tax_id.strip()) >= 8:
+        lead_score += 10
+    if req.scale_info and len(req.scale_info.strip()) > 5:
+        lead_score += 5
+    lead_score = min(lead_score, 98)
+
+    # 1. Tìm hoặc tạo Khách hàng
+    cust_rec = airtable_client.find_customer_by_phone(phone)
+    cust_id = cust_rec["id"] if cust_rec else None
+
+    if not cust_id:
+        new_cust = airtable_client.create_record("Khach hang", {
+            "Ten cong ty": cust_name,
+            "Nguoi dai dien": contact,
+            "So dien thoai": phone,
+            "Email": req.email or "",
+            "Ma so thue MST": req.tax_id or "",
+            "Dia chi": req.address or "",
+            "Loai KH": "Cong ty" if req.tax_id else "Ca nhan",
+            "Ghi chu": f"Tiếp nhận qua Bot Intake ngày {date.today().strftime('%d/%m/%Y')}"
+        })
+        if new_cust:
+            cust_id = new_cust["id"]
+
+    tracking_code = f"PT-{date.today().strftime('%Y%m')}-{random.randint(1000, 9999)}"
+    pkg_name = req.package_name or "Karaoke VIP & Lounge"
+    sol_type = req.solution_type or "Tư vấn thiết kế & báo giá trọn gói"
+    demand_summary = f"[{pkg_name} - {sol_type}] Quy mô: {req.scale_info or 'Tiêu chuẩn'} | Dự toán: {budget:,.0f} đ"
+    if req.preferred_brand:
+        demand_summary += f" | Thương hiệu: {req.preferred_brand}"
+    if req.notes:
+        demand_summary += f" | Ghi chú: {req.notes}"
+
+    lead_fields = {
+        "Ten cty Khach": cust_name,
+        "Nguoi lien he": contact,
+        "So dien thoai": phone,
+        "Email": req.email or "",
+        "Nguon lead": "Web form",
+        "Nhu cau Du an": demand_summary,
+        "Khu vuc": "TP.HCM",
+        "Stage": "New",
+        "Lead Score": lead_score,
+        "Gia tri uoc tinh": budget,
+        "Ghi chu": f"Mã hồ sơ: {tracking_code} | Địa chỉ: {req.address or 'Chưa cung cấp'}"
+    }
+    if cust_id:
+        lead_fields["Khach hang"] = [cust_id]
+
+    lead_rec = airtable_client.create_record("Lead & Pipeline", lead_fields)
+    lead_id = lead_rec["id"] if lead_rec else f"lead_{tracking_code}"
+
+    # 2. Insert vĩnh viễn vào SQLite Database
+    try:
+        db = SessionLocal()
+        if cust_id:
+            c_db = DBCustomer(
+                id=cust_id,
+                company_name=cust_name,
+                contact_name=contact,
+                phone=phone,
+                email=req.email or "",
+                tax_id=req.tax_id or "",
+                address=req.address or ""
+            )
+            db.merge(c_db)
+
+        l_db = DBLead(
+            id=lead_id,
+            customer_id=cust_id,
+            company_name=cust_name,
+            contact_name=contact,
+            phone=phone,
+            email=req.email or "",
+            source=req.source or "AI Bot Intake",
+            demand=demand_summary,
+            stage="New",
+            lead_score=lead_score,
+            estimated_value=budget
+        )
+        db.merge(l_db)
+        db.commit()
+        db.close()
+    except Exception as e:
+        print("[DB Sync Intake Lead Error]:", e)
+
+    blocks = [
+        "📋 **Đã tiếp nhận Yêu Cầu Tư Vấn & Báo Giá thành công!**",
+        f"• **Mã hồ sơ:** `{tracking_code}`",
+        f"• **Khách hàng:** {cust_name} ({contact} — {phone})",
+        f"• **Giải pháp:** {pkg_name} ({sol_type})",
+        f"• **Dự toán ngân sách:** `{budget:,.0f} đ`" if budget > 0 else "• **Dự toán ngân sách:** Kỹ sư sẽ tư vấn phương án tối ưu",
+        f"• **Điểm tiềm năng (Lead Score):** `{lead_score}/100` ({'Ưu tiên cao' if lead_score >= 75 else 'Tiêu chuẩn'})",
+        "• **Cơ sở dữ liệu:** Đã lưu vào SQLite Database & Pipeline CRM (Cột Mới)",
+        "• **Thời gian phản hồi:** Kỹ sư âm thanh Phúc Thanh Audio sẽ liên hệ tư vấn trong vòng 15 phút!"
+    ]
+
+    return {
+        "action": "ANSWER",
+        "blocks": blocks,
+        "data": {
+            "tracking_code": tracking_code,
+            "lead_id": lead_id,
+            "customer_name": cust_name,
+            "phone": phone,
+            "lead_score": lead_score,
+            "package_name": pkg_name,
+            "solution_type": sol_type,
+            "estimated_budget": budget
+        }
+    }
+
