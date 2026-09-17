@@ -916,11 +916,11 @@ export default function App() {
               PHÚC THANH <span style={{ color: '#D31027' }}>AUDIO</span>
             </h2>
             <p style={{ fontSize: 13, color: '#64748B', margin: '4px 0 0 0' }}>
-              Hệ Thống Quản Trị & Tự Động Hóa Chuyển Đổi Số
+              Cổng Quản Trị Kinh Doanh & Dự Án Âm Thanh
             </p>
             <div style={{ display: 'flex', justifyContent: 'center', gap: 6, marginTop: 10 }}>
               <span className="badge badge-red" style={{ fontSize: 10.5 }}>CỔNG ĐĂNG NHẬP NỘI BỘ</span>
-              <span className="badge badge-blue" style={{ fontSize: 10.5 }}>AIRTABLE & ZBS ACTIVE</span>
+              <span className="badge badge-blue" style={{ fontSize: 10.5 }}>HỆ THỐNG TRỰC TUYẾN</span>
             </div>
           </div>
 
@@ -1216,13 +1216,13 @@ export default function App() {
         {/* Clean Typography Tabs without icons */}
         <div style={{ maxWidth: 1440, margin: '0 auto', padding: '0 24px', display: 'flex', gap: 8, overflowX: 'auto' }}>
           {[
-            { id: 'dashboard', label: 'Dashboard CEO' },
-            { id: 'quotes', label: 'Báo Giá ISO' },
-            { id: 'contracts', label: 'Tạo Hợp Đồng 1-Click' },
-            { id: 'pipeline', label: 'Pipeline Bán Hàng' },
-            { id: 'inventory', label: 'Kho Thiết Bị & Cảnh Báo Tồn' },
-            { id: 'warranties', label: 'Trung Tâm Bảo Hành' },
-            { id: 'zbs', label: 'Zalo ZBS WIFIM' },
+            { id: 'dashboard', label: 'Tổng Quan Điều Hành' },
+            { id: 'quotes', label: 'Báo Giá Dự Án' },
+            { id: 'contracts', label: 'Quản Lý Hợp Đồng' },
+            { id: 'pipeline', label: 'Khách Hàng & Cơ Hội' },
+            { id: 'inventory', label: 'Kho Hàng & Thiết Bị' },
+            { id: 'warranties', label: 'Dịch Vụ & Bảo Hành' },
+            { id: 'zbs', label: 'Thông Báo Zalo (ZNS)' },
           ].map(tab => {
             const isActive = activeTab === tab.id;
             return (
@@ -1253,19 +1253,19 @@ export default function App() {
       {/* Main Content Area */}
       <main style={{ flex: 1, maxWidth: 1440, width: '100%', margin: '0 auto', padding: '24px' }}>
 
-        {/* ==================== TAB 1: DASHBOARD CEO ==================== */}
+        {/* ==================== TAB 1: BÁO CÁO ĐIỀU HÀNH ==================== */}
         {activeTab === 'dashboard' && (
           <div>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 28 }}>
               <div>
-                <h2 style={{ fontSize: 20, fontWeight: 700, color: '#0F172A', letterSpacing: '-0.015em' }}>Bảng Điều Khiển Tổng Quan (CEO)</h2>
+                <h2 style={{ fontSize: 20, fontWeight: 700, color: '#0F172A', letterSpacing: '-0.015em' }}>Báo Cáo Điều Hành & Doanh Thu</h2>
                 <p style={{ color: '#64748B', fontSize: 13, marginTop: 4 }}>
-                  Số liệu điều hành thời gian thực từ cơ sở dữ liệu Airtable Phúc Thanh Audio & tự động hóa
+                  Tổng hợp chỉ số kinh doanh, hợp đồng và tiến độ dự án Phúc Thanh Audio
                 </p>
               </div>
               <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
                 <span className="badge badge-green" style={{ fontSize: 11.5, padding: '5px 11px' }}>
-                  ● Airtable Connected ({kpiData?.airtable_reports_count || 6} kỳ báo cáo)
+                  ● Dữ Liệu Đồng Bộ ({kpiData?.airtable_reports_count || 6} kỳ báo cáo)
                 </span>
                 <span className="badge badge-gold" style={{ fontSize: 11.5, padding: '5px 11px' }}>
                   Cập nhật: {kpiData?.last_updated || 'Vừa xong'}
@@ -1295,41 +1295,41 @@ export default function App() {
                 </p>
                 {kpiData?.pending_revenue > 0 && kpiData?.net_revenue_signed > 0 && (
                   <p style={{ fontSize: 11, color: '#64748B', margin: '4px 0 0 11px' }}>
-                    ⏳ Dự thu chờ ký: <strong>{(kpiData.pending_revenue).toLocaleString('vi-VN')} đ</strong> ({kpiData.pending_contracts_count || 0} HĐ)
+                    ● Dự thu chờ ký: <strong>{(kpiData.pending_revenue).toLocaleString('vi-VN')} đ</strong> ({kpiData.pending_contracts_count || 0} HĐ)
                   </p>
                 )}
               </div>
 
               <div className="white-card" style={{ padding: '22px 24px', position: 'relative', overflow: 'hidden' }}>
                 <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: 3, background: '#F59E0B' }}></div>
-                <p style={{ color: '#64748B', fontSize: 11, fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.04em' }}>BÁO GIÁ ISO ĐÃ PHÁT HÀNH</p>
+                <p style={{ color: '#64748B', fontSize: 11, fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.04em' }}>BÁO GIÁ ĐÃ PHÁT HÀNH</p>
                 <h3 style={{ fontSize: 22, fontWeight: 700, color: '#1E293B', marginTop: 6, letterSpacing: '-0.02em' }}>
                   {kpiData?.total_quotes || quotes.length} Báo giá
                 </h3>
                 <p style={{ fontSize: 12, color: '#64748B', marginTop: 8 }}>
-                  Tự động điền theo mẫu ISO Phúc Thanh Audio
+                  Mẫu văn bản quy chuẩn Phúc Thanh Audio
                 </p>
               </div>
 
               <div className="white-card" style={{ padding: '22px 24px', position: 'relative', overflow: 'hidden' }}>
                 <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: 3, background: '#10B981' }}></div>
-                <p style={{ color: '#64748B', fontSize: 11, fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.04em' }}>LEADS & PIPELINE DEALS</p>
+                <p style={{ color: '#64748B', fontSize: 11, fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.04em' }}>KHÁCH HÀNG & CƠ HỘI BÁN HÀNG</p>
                 <h3 style={{ fontSize: 22, fontWeight: 700, color: '#1E293B', marginTop: 6, letterSpacing: '-0.02em' }}>
                   {kpiData?.total_leads || leads.length} Khách hàng
                 </h3>
                 <p style={{ fontSize: 12, color: '#0284C7', marginTop: 8, fontWeight: 500 }}>
-                  {kpiData?.won_deals || 0} Deal đã chốt thành công (Won)
+                  {kpiData?.won_deals || 0} Cơ hội đã chuyển đổi thành công
                 </p>
               </div>
 
               <div className="white-card" style={{ padding: '22px 24px', position: 'relative', overflow: 'hidden' }}>
                 <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: 3, background: '#EF4444' }}></div>
-                <p style={{ color: '#64748B', fontSize: 11, fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.04em' }}>BẢO HÀNH ĐANG XỬ LÝ</p>
+                <p style={{ color: '#64748B', fontSize: 11, fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.04em' }}>BẢO HÀNH & KỸ THUẬT</p>
                 <h3 style={{ fontSize: 22, fontWeight: 700, color: '#1E293B', marginTop: 6, letterSpacing: '-0.02em' }}>
                   {kpiData?.active_warranties || warranties.length} Phiếu
                 </h3>
                 <p style={{ fontSize: 12, color: '#64748B', marginTop: 8 }}>
-                  KTV phụ trách cập nhật tiến độ
+                  Bộ phận kỹ thuật theo dõi & xử lý
                 </p>
               </div>
 
@@ -1898,23 +1898,23 @@ export default function App() {
               <div className="white-card" style={{ padding: '22px 24px' }}>
                 <h4 style={{ fontSize: 15, fontWeight: 700, color: '#0F172A', marginBottom: 14, display: 'flex', alignItems: 'center', gap: 8 }}>
                   <span style={{ width: 8, height: 8, borderRadius: '50%', background: '#10B981' }}></span>
-                  Hạ Tầng Tự Động Hóa & Cơ Sở Dữ Liệu
+                  Trạng Thái Hệ Thống & Dữ Liệu
                 </h4>
                 <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 14 }}>
                   <div style={{ padding: '14px 16px', background: '#F8FAFC', borderRadius: 10, border: '1px solid #E2E8F0' }}>
-                    <div style={{ fontSize: 11, color: '#64748B', fontWeight: 600, textTransform: 'uppercase' }}>Airtable Base</div>
-                    <div style={{ fontSize: 13, fontWeight: 700, color: '#0F172A', marginTop: 4 }}>10 Bảng Dữ Liệu</div>
-                    <div style={{ fontSize: 11.5, color: '#16A34A', marginTop: 4, fontWeight: 500 }}>● Bảng `Bao cao` Active</div>
+                    <div style={{ fontSize: 11, color: '#64748B', fontWeight: 600, textTransform: 'uppercase' }}>Cơ Sở Dữ Liệu</div>
+                    <div style={{ fontSize: 13, fontWeight: 700, color: '#0F172A', marginTop: 4 }}>Dữ Liệu Doanh Nghiệp</div>
+                    <div style={{ fontSize: 11.5, color: '#16A34A', marginTop: 4, fontWeight: 500 }}>● Đã đồng bộ trực tuyến</div>
                   </div>
                   <div style={{ padding: '14px 16px', background: '#F8FAFC', borderRadius: 10, border: '1px solid #E2E8F0' }}>
-                    <div style={{ fontSize: 11, color: '#64748B', fontWeight: 600, textTransform: 'uppercase' }}>Đệm Hiệu Năng</div>
+                    <div style={{ fontSize: 11, color: '#64748B', fontWeight: 600, textTransform: 'uppercase' }}>Bộ Nhớ Đệm</div>
                     <div style={{ fontSize: 13, fontWeight: 700, color: '#0F172A', marginTop: 4 }}>Redis Cache</div>
-                    <div style={{ fontSize: 11.5, color: '#0284C7', marginTop: 4, fontWeight: 500 }}>● Phản hồi &lt; 50ms</div>
+                    <div style={{ fontSize: 11.5, color: '#0284C7', marginTop: 4, fontWeight: 500 }}>● Phản hồi tức thì (&lt;15ms)</div>
                   </div>
                   <div style={{ padding: '14px 16px', background: '#F8FAFC', borderRadius: 10, border: '1px solid #E2E8F0' }}>
-                    <div style={{ fontSize: 11, color: '#64748B', fontWeight: 600, textTransform: 'uppercase' }}>Tự Động Hóa</div>
-                    <div style={{ fontSize: 13, fontWeight: 700, color: '#0F172A', marginTop: 4 }}>VietQR + ZBS</div>
-                    <div style={{ fontSize: 11.5, color: '#16A34A', marginTop: 4, fontWeight: 500 }}>● Sẵn sàng kết nối</div>
+                    <div style={{ fontSize: 11, color: '#64748B', fontWeight: 600, textTransform: 'uppercase' }}>Dịch Vụ Tích Hợp</div>
+                    <div style={{ fontSize: 13, fontWeight: 700, color: '#0F172A', marginTop: 4 }}>VietQR + Zalo ZNS</div>
+                    <div style={{ fontSize: 11.5, color: '#16A34A', marginTop: 4, fontWeight: 500 }}>● Sẵn sàng hoạt động</div>
                   </div>
                 </div>
               </div>
@@ -1923,20 +1923,20 @@ export default function App() {
               <div className="white-card" style={{ padding: '22px 24px' }}>
                 <h4 style={{ fontSize: 15, fontWeight: 700, color: '#0F172A', marginBottom: 14, display: 'flex', alignItems: 'center', gap: 8 }}>
                   <span style={{ width: 8, height: 8, borderRadius: '50%', background: '#D31027' }}></span>
-                  Truy Cập Nhanh Nghiệp Vụ
+                  Chức Năng Nghiệp Vụ
                 </h4>
                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
-                  <button onClick={() => setActiveTab('contracts')} className="btn-secondary" style={{ padding: '10px 12px', justifyContent: 'center' }}>
-                    📄 Quản Lý Hợp Đồng
+                  <button onClick={() => setActiveTab('contracts')} className="btn-secondary" style={{ padding: '10px 12px', justifyContent: 'center', fontWeight: 700 }}>
+                    Quản Lý Hợp Đồng
                   </button>
-                  <button onClick={() => setActiveTab('quotes')} className="btn-secondary" style={{ padding: '10px 12px', justifyContent: 'center' }}>
-                    📊 Báo Giá ISO
+                  <button onClick={() => setActiveTab('quotes')} className="btn-secondary" style={{ padding: '10px 12px', justifyContent: 'center', fontWeight: 700 }}>
+                    Báo Giá Dự Án
                   </button>
-                  <button onClick={() => setActiveTab('pipeline')} className="btn-secondary" style={{ padding: '10px 12px', justifyContent: 'center' }}>
-                    🎯 Pipeline Khách Hàng
+                  <button onClick={() => setActiveTab('pipeline')} className="btn-secondary" style={{ padding: '10px 12px', justifyContent: 'center', fontWeight: 700 }}>
+                    Khách Hàng (CRM)
                   </button>
-                  <button onClick={() => setActiveTab('inventory')} className="btn-secondary" style={{ padding: '10px 12px', justifyContent: 'center' }}>
-                    📦 Kho Thiết Bị
+                  <button onClick={() => setActiveTab('inventory')} className="btn-secondary" style={{ padding: '10px 12px', justifyContent: 'center', fontWeight: 700 }}>
+                    Quản Lý Kho
                   </button>
                 </div>
               </div>
@@ -1949,9 +1949,9 @@ export default function App() {
         {activeTab === 'quotes' && (
           <div>
             <div style={{ marginBottom: 20 }}>
-              <h2 style={{ fontSize: 24, fontWeight: 800, color: '#0F172A' }}>Quote Studio — Báo Giá Chuẩn ISO</h2>
+              <h2 style={{ fontSize: 24, fontWeight: 800, color: '#0F172A' }}>Lập Báo Giá & Dự Toán Dự Án</h2>
               <p style={{ color: '#64748B', fontSize: 13, marginTop: 2 }}>
-                Chọn thiết bị âm thanh từ Airtable, tự động tính tổng tiền + thuế VAT và xuất file Word theo mẫu ISO
+                Lựa chọn thiết bị âm thanh từ danh mục, tính toán chi phí trước và sau thuế, xuất file văn bản quy chuẩn gửi khách hàng.
               </p>
             </div>
 
@@ -2127,7 +2127,7 @@ export default function App() {
                   style={{ width: '100%', justifyContent: 'center' }}
                   disabled={loading}
                 >
-                  Xuất Báo Giá ISO (.docx) & Sync Airtable
+                  Lưu & Xuất Báo Giá (.docx)
                 </button>
               </div>
 
@@ -2320,14 +2320,14 @@ export default function App() {
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 26 }}>
               <div>
                 <h2 style={{ fontSize: 20, fontWeight: 700, color: '#0F172A', letterSpacing: '-0.015em' }}>
-                  Quản Lý & Tạo Hợp Đồng Tự Động
+                  Quản Lý & Soạn Thảo Hợp Đồng
                 </h2>
                 <p style={{ color: '#64748B', fontSize: 13, marginTop: 4 }}>
-                  Tra cứu MST tự động điền pháp nhân qua VietQR API, kết xuất file Word (.docx) chuẩn Phúc Thanh Audio và đồng bộ Airtable
+                  Tra cứu pháp nhân doanh nghiệp theo mã số thuế, soạn thảo điều khoản và kết xuất tài liệu chuẩn hóa
                 </p>
               </div>
               <span className="badge badge-gold" style={{ fontSize: 11.5, padding: '5px 12px' }}>
-                Mẫu Hợp Đồng v2 Chuẩn ISO
+                Mẫu Hợp Đồng Kinh Tế
               </span>
             </div>
 
@@ -2346,13 +2346,12 @@ export default function App() {
               }}>
                 <div>
                   <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                    <span style={{ fontSize: 18 }}>🎉</span>
                     <h4 style={{ color: '#166534', fontWeight: 700, fontSize: 14.5, margin: 0 }}>
                       Đã Tạo Thành Công Hợp Đồng: {createdContract.id}
                     </h4>
                   </div>
-                  <p style={{ color: '#15803D', fontSize: 12.5, margin: '4px 0 0 26px' }}>
-                    Khách hàng: <strong>{createdContract.company}</strong> — Giá trị: <strong>{Number(createdContract.amount).toLocaleString('vi-VN')} đ</strong>. File Word đang được tải xuống!
+                  <p style={{ color: '#15803D', fontSize: 12.5, margin: '4px 0 0 0' }}>
+                    Khách hàng: <strong>{createdContract.company}</strong> — Giá trị: <strong>{Number(createdContract.amount).toLocaleString('vi-VN')} đ</strong>. File hợp đồng đã sẵn sàng tải xuống.
                   </p>
                 </div>
                 <button
@@ -2360,20 +2359,20 @@ export default function App() {
                   className="btn-primary"
                   style={{ padding: '8px 18px', fontSize: 13, whiteSpace: 'nowrap' }}
                 >
-                  📥 Bấm Tải File Word (.docx)
+                  Tải File Hợp Đồng (.docx)
                 </button>
               </div>
             )}
 
-            {/* FORM TẠO HỢP ĐỒNG 1-CLICK */}
+            {/* FORM LẬP HỢP ĐỒNG */}
             <div className="white-card" style={{ padding: '24px 28px', marginBottom: 30 }}>
               <h3 style={{ fontSize: 15, fontWeight: 700, color: '#0F172A', marginBottom: 18 }}>
-                Tạo Hợp Đồng Mới (Tra Cứu Mã Số Thuế Tự Động)
+                Lập Hợp Đồng Kinh Tế Mới
               </h3>
 
               <div style={{ marginBottom: 18 }}>
                 <label style={{ fontSize: 11.5, fontWeight: 600, color: '#D31027', display: 'block', marginBottom: 6, textTransform: 'uppercase', letterSpacing: '0.04em' }}>
-                  BƯỚC 1: TRA CỨU MÃ SỐ THUẾ (VIETQR API)
+                  Thông Tin Pháp Nhân & Mã Số Thuế
                 </label>
                 <div style={{ display: 'flex', gap: 10 }}>
                   <input
@@ -2567,14 +2566,14 @@ export default function App() {
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 18 }}>
                 <div>
                   <h3 style={{ fontSize: 15, fontWeight: 700, color: '#0F172A', margin: 0 }}>
-                    Danh Sách Hợp Đồng Đã Phát Hành & Đang Triển Khai
+                    Danh Sách Hợp Đồng Kinh Tế
                   </h3>
                   <p style={{ fontSize: 12.5, color: '#64748B', margin: '4px 0 0 0' }}>
-                    Tổng cộng <strong>{contracts.length} hợp đồng</strong> đã lưu trữ trên cơ sở dữ liệu Airtable Phúc Thanh Audio
+                    Tổng cộng <strong>{contracts.length} hợp đồng</strong> đã lưu trữ trên hệ thống cơ sở dữ liệu
                   </p>
                 </div>
-                <button onClick={fetchInitialData} className="btn-secondary" style={{ fontSize: 12 }}>
-                  🔄 Làm mới dữ liệu
+                <button onClick={fetchInitialData} className="btn-secondary" style={{ fontSize: 12, fontWeight: 600 }}>
+                  Làm mới
                 </button>
               </div>
 
@@ -2628,7 +2627,7 @@ export default function App() {
                                 className="btn-secondary"
                                 style={{ padding: '6px 12px', fontSize: 12, display: 'inline-flex', alignItems: 'center', gap: 4 }}
                               >
-                                📥 .docx
+                                Tải .docx
                               </button>
                               {(f['Trang thai'] || 'Cho ky') === 'Cho ky' && (
                                 <button
@@ -2637,7 +2636,7 @@ export default function App() {
                                   style={{ padding: '6px 12px', fontSize: 12, display: 'inline-flex', alignItems: 'center', gap: 4, background: '#16A34A', borderColor: '#16A34A' }}
                                   title="Xác nhận khách hàng đã ký để ghi nhận doanh thu thực tế"
                                 >
-                                  ✍️ Ký Duyệt
+                                  Ký Duyệt
                                 </button>
                               )}
                             </div>
@@ -3198,11 +3197,11 @@ export default function App() {
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 22, flexWrap: 'wrap', gap: 16 }}>
               <div>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-                  <h2 style={{ fontSize: 24, fontWeight: 800, color: '#0F172A' }}>Kho Thiết Bị & Cảnh Báo Tồn Kho</h2>
-                  <span className="badge badge-red" style={{ fontSize: 11 }}>REALTIME AIRTABLE</span>
+                  <h2 style={{ fontSize: 24, fontWeight: 800, color: '#0F172A' }}>Quản Lý Kho Hàng & Thiết Bị</h2>
+                  <span className="badge badge-green" style={{ fontSize: 11 }}>DỮ LIỆU ĐỒNG BỘ</span>
                 </div>
                 <p style={{ color: '#64748B', fontSize: 13, marginTop: 4 }}>
-                  Theo dõi số lượng tồn, giá trị tồn kho thiết bị âm thanh và cảnh báo tự động khi chạm ngưỡng an toàn
+                  Theo dõi số lượng tồn, giá trị tồn kho thiết bị âm thanh và mức dự trữ an toàn
                 </p>
               </div>
               <div style={{ display: 'flex', gap: 10 }}>
@@ -3224,7 +3223,7 @@ export default function App() {
                   className="btn-primary"
                   style={{ display: 'flex', alignItems: 'center', gap: 6 }}
                 >
-                  + Tạo Phiếu Nhập / Xuất Kho
+                  + Phiếu Nhập / Xuất Kho
                 </button>
               </div>
             </div>
@@ -3594,9 +3593,9 @@ export default function App() {
         {activeTab === 'warranties' && (
           <div>
             <div style={{ marginBottom: 20 }}>
-              <h2 style={{ fontSize: 24, fontWeight: 800, color: '#0F172A' }}>Trung Tâm Bảo Hành & Sửa Chữa (KTV)</h2>
+              <h2 style={{ fontSize: 24, fontWeight: 800, color: '#0F172A' }}>Dịch Vụ & Bảo Hành Thiết Bị</h2>
               <p style={{ color: '#64748B', fontSize: 13, marginTop: 2 }}>
-                Theo dõi tiếp nhận thiết bị, phân công kỹ thuật viên và gửi Zalo ZBS thông báo cho khách khi hoàn thành
+                Tiếp nhận bảo hành, quản lý tiến độ xử lý kỹ thuật và gửi thông báo tới khách hàng
               </p>
             </div>
 
@@ -3626,11 +3625,11 @@ export default function App() {
                         </td>
                         <td style={{ padding: '11px 12px' }}>
                           <button
-                            onClick={() => showToast(`Đã gửi tin ZBS thông báo lịch hẹn tới khách hàng!`)}
+                            onClick={() => showToast(`Đã gửi thông báo lịch hẹn tới khách hàng qua Zalo!`)}
                             className="btn-success"
-                            style={{ padding: '5px 12px', fontSize: 12 }}
+                            style={{ padding: '5px 12px', fontSize: 12, fontWeight: 600 }}
                           >
-                            Bắn ZBS
+                            Gửi Thông Báo
                           </button>
                         </td>
                       </tr>
@@ -3642,33 +3641,33 @@ export default function App() {
           </div>
         )}
 
-        {/* ==================== TAB 6: ZALO ZBS WIFIM ==================== */}
+        {/* ==================== TAB 6: ZALO ZNS ==================== */}
         {activeTab === 'zbs' && (
           <div>
             <div style={{ marginBottom: 20 }}>
-              <h2 style={{ fontSize: 24, fontWeight: 800, color: '#0F172A' }}>Quản Trị Tin Nhắn Zalo ZBS (WIFIM API)</h2>
+              <h2 style={{ fontSize: 24, fontWeight: 800, color: '#0F172A' }}>Thông Báo Khách Hàng (Zalo ZNS)</h2>
               <p style={{ color: '#64748B', fontSize: 13, marginTop: 2 }}>
-                Trình giả lập và gửi tin nhắn Chăm sóc khách hàng tự động qua 5 mẫu template Zalo OA đã được duyệt
+                Gửi thông báo tiến độ dự án, xác nhận hợp đồng và chăm sóc khách hàng qua tài khoản Zalo OA chính thức
               </p>
             </div>
 
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 24 }}>
 
               <div className="white-card" style={{ padding: 24 }}>
-                <h4 style={{ fontSize: 16, fontWeight: 800, color: '#0F172A', marginBottom: 16 }}>Cấu Hình Gửi Tin ZBS</h4>
+                <h4 style={{ fontSize: 16, fontWeight: 800, color: '#0F172A', marginBottom: 16 }}>Cấu Hình Tin Nhắn</h4>
 
                 <div style={{ marginBottom: 12 }}>
-                  <label style={{ fontSize: 12, color: '#475569', fontWeight: 600 }}>Chọn Mẫu Template Zalo</label>
+                  <label style={{ fontSize: 12, color: '#475569', fontWeight: 600 }}>Chọn Mẫu Thông Báo Zalo</label>
                   <select
                     className="input-field"
                     value={zbsForm.template_id}
                     onChange={e => setZbsForm({ ...zbsForm, template_id: e.target.value })}
                   >
-                    <option value="584044">Template 584044: Hợp đồng mẫu / Khởi động dự án</option>
-                    <option value="422511">Template 422511: Xác nhận đơn hàng / Báo giá</option>
-                    <option value="584045">Template 584045: Yêu cầu thanh toán / Nhắc nợ</option>
-                    <option value="584042">Template 584042: Xác nhận lịch hẹn khảo sát / Bảo hành</option>
-                    <option value="274649">Template 274649: Cảm ơn quý khách hoàn thành dịch vụ</option>
+                    <option value="584044">Mẫu 584044: Khởi động dự án & Ký kết hợp đồng</option>
+                    <option value="422511">Mẫu 422511: Xác nhận đơn hàng & Báo giá</option>
+                    <option value="584045">Mẫu 584045: Xác nhận thanh toán & Đối soát</option>
+                    <option value="584042">Mẫu 584042: Lịch hẹn khảo sát & Kỹ thuật bảo hành</option>
+                    <option value="274649">Mẫu 274649: Thư cảm ơn bàn giao nghiệm thu</option>
                   </select>
                 </div>
 
@@ -3682,7 +3681,7 @@ export default function App() {
                 </div>
 
                 <div style={{ marginBottom: 12 }}>
-                  <label style={{ fontSize: 12, color: '#475569', fontWeight: 600 }}>Tên Khách Hàng (customer_name)</label>
+                  <label style={{ fontSize: 12, color: '#475569', fontWeight: 600 }}>Tên Khách Hàng</label>
                   <input
                     className="input-field"
                     value={zbsForm.customer_name}
@@ -3692,7 +3691,7 @@ export default function App() {
 
                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, marginBottom: 18 }}>
                   <div>
-                    <label style={{ fontSize: 12, color: '#475569', fontWeight: 600 }}>Mã Đơn / HĐ (order_code)</label>
+                    <label style={{ fontSize: 12, color: '#475569', fontWeight: 600 }}>Mã Đơn / HĐ</label>
                     <input
                       className="input-field"
                       value={zbsForm.order_code}
@@ -3700,7 +3699,7 @@ export default function App() {
                     />
                   </div>
                   <div>
-                    <label style={{ fontSize: 12, color: '#475569', fontWeight: 600 }}>Số tiền (money)</label>
+                    <label style={{ fontSize: 12, color: '#475569', fontWeight: 600 }}>Số tiền</label>
                     <input
                       className="input-field"
                       value={zbsForm.money}
@@ -3715,7 +3714,7 @@ export default function App() {
                   style={{ width: '100%', justifyContent: 'center' }}
                   disabled={loading}
                 >
-                  Gửi Tin Zalo ZBS Ngay
+                  Gửi Tin Nhắn Zalo
                 </button>
               </div>
 
@@ -3756,7 +3755,7 @@ export default function App() {
                     border: '1px solid #E2E8F0'
                   }}>
                     <div style={{ fontSize: 11, fontWeight: 800, color: '#D31027', marginBottom: 4 }}>
-                      THÔNG BÁO TỰ ĐỘNG (ZBS)
+                      THÔNG BÁO TỪ PHÚC THANH AUDIO
                     </div>
                     <div style={{ fontSize: 12, color: '#334155', lineHeight: 1.5 }}>
                       Kính chào <b>{zbsForm.customer_name}</b>, Phúc Thanh Audio xin gửi thông báo:
