@@ -50,38 +50,44 @@ def api_create_contract(req: ContractCreateRequest):
         include_vat=req.include_vat if req.include_vat is not None else True,
         price_includes_vat=req.price_includes_vat or False
     )
+    redis_client.delete("contracts_list")
     redis_client.delete("kpi_summary")
     return res
 
 @router.get("/contracts")
 def api_list_contracts():
-    airtable_recs = airtable_client.list_records("Hop dong") or []
-    existing_codes = {r.get("fields", {}).get("Ma HD") for r in airtable_recs if r.get("fields", {}).get("Ma HD")}
+    cached = redis_client.get("contracts_list")
+    if cached is not None:
+        return cached
 
+    records = []
     try:
         from app.core.database import SessionLocal
         from app.models.db_models import Contract as DBContract
         db = SessionLocal()
         db_contracts = db.query(DBContract).order_by(DBContract.id.desc()).all()
         for c in db_contracts:
-            if c.contract_code and c.contract_code not in existing_codes:
-                airtable_recs.insert(0, {
-                    "id": c.id,
-                    "fields": {
-                        "Ma HD": c.contract_code,
-                        "Nguoi ky KH": c.company_name or c.representative or "Khách hàng",
-                        "MST KH": c.tax_id or "",
-                        "Loai HD": c.contract_type or "Cung cấp thiết bị",
-                        "Gia tri HD": c.grand_total or 0,
-                        "Trang thai": c.status or "Cho ky"
-                    }
-                })
-                existing_codes.add(c.contract_code)
+            records.append({
+                "id": c.id,
+                "fields": {
+                    "Ma HD": c.contract_code,
+                    "Nguoi ky KH": c.company_name or c.representative or "Khách hàng",
+                    "MST KH": c.tax_id or "",
+                    "Loai HD": c.contract_type or "Cung cấp thiết bị",
+                    "Gia tri HD": c.grand_total or 0,
+                    "Trang thai": c.status or "Cho ky"
+                }
+            })
         db.close()
     except Exception as e:
-        print("[api_list_contracts DB sync error]:", e)
+        print("[api_list_contracts DB error]:", e)
 
-    return airtable_recs
+    # Nếu DB trống thì mới fallback sang Airtable
+    if not records:
+        records = airtable_client.list_records("Hop dong") or []
+
+    redis_client.set("contracts_list", records, expire_seconds=300)
+    return records
 
 @router.patch("/contracts/{contract_id}/status")
 def api_update_contract_status(contract_id: str, payload: dict):
@@ -110,6 +116,7 @@ def api_update_contract_status(contract_id: str, payload: dict):
         except Exception as ae:
             print("[Airtable update contract status error]:", ae)
             
+        redis_client.delete("contracts_list")
         redis_client.delete("kpi_summary")
         return {"success": True, "contract_id": contract_id, "status": new_status}
     except Exception as e:
@@ -135,38 +142,43 @@ def api_create_quote(req: QuoteCreateRequest):
         special_notes=req.special_notes,
         send_zbs=req.send_zbs or False
     )
+    redis_client.delete("quotes_list")
     redis_client.delete("kpi_summary")
     return res
 
 @router.get("/quotes")
 def api_list_quotes():
-    airtable_recs = airtable_client.list_records("Bao gia") or []
-    existing_codes = {r.get("fields", {}).get("Ma bao gia") for r in airtable_recs if r.get("fields", {}).get("Ma bao gia")}
+    cached = redis_client.get("quotes_list")
+    if cached is not None:
+        return cached
 
+    records = []
     try:
         from app.core.database import SessionLocal
         from app.models.db_models import Quote as DBQuote
         db = SessionLocal()
         db_quotes = db.query(DBQuote).order_by(DBQuote.id.desc()).all()
         for q in db_quotes:
-            if q.quote_code and q.quote_code not in existing_codes:
-                airtable_recs.insert(0, {
-                    "id": q.id,
-                    "fields": {
-                        "Ma bao gia": q.quote_code,
-                        "Ten du an": q.company_name or "Trang bị âm thanh",
-                        "Nguoi lien he": q.contact_name or "",
-                        "So dien thoai": q.phone or "",
-                        "Tong cong gia tri": q.grand_total or 0,
-                        "Trang thai": q.status or "Moi"
-                    }
-                })
-                existing_codes.add(q.quote_code)
+            records.append({
+                "id": q.id,
+                "fields": {
+                    "Ma bao gia": q.quote_code,
+                    "Ten du an": q.company_name or "Trang bị âm thanh",
+                    "Nguoi lien he": q.contact_name or "",
+                    "So dien thoai": q.phone or "",
+                    "Tong cong gia tri": q.grand_total or 0,
+                    "Trang thai": q.status or "Moi"
+                }
+            })
         db.close()
     except Exception as e:
-        print("[api_list_quotes DB sync error]:", e)
+        print("[api_list_quotes DB error]:", e)
 
-    return airtable_recs
+    if not records:
+        records = airtable_client.list_records("Bao gia") or []
+
+    redis_client.set("quotes_list", records, expire_seconds=300)
+    return records
 
 # NV3: Lead & Pipeline
 @router.post("/leads")
@@ -181,41 +193,46 @@ def api_create_lead(req: LeadCreateRequest):
         estimated_value=req.estimated_value or 0,
         sales_rep=req.sales_rep
     )
+    redis_client.delete("leads_list")
     redis_client.delete("kpi_summary")
     return res
 
 @router.get("/leads")
 def api_list_leads():
-    airtable_recs = airtable_client.list_records("Lead & Pipeline") or []
-    existing_phones = {r.get("fields", {}).get("So dien thoai") for r in airtable_recs if r.get("fields", {}).get("So dien thoai")}
+    cached = redis_client.get("leads_list")
+    if cached is not None:
+        return cached
 
+    records = []
     try:
         from app.core.database import SessionLocal
         from app.models.db_models import Lead as DBLead
         db = SessionLocal()
         db_leads = db.query(DBLead).order_by(DBLead.id.desc()).all()
         for l in db_leads:
-            if l.phone and l.phone not in existing_phones:
-                airtable_recs.insert(0, {
-                    "id": l.id,
-                    "fields": {
-                        "Ten cty Khach": l.company_name or "",
-                        "Nguoi lien he": l.contact_name or "",
-                        "So dien thoai": l.phone or "",
-                        "Email": l.email or "",
-                        "Nguon lead": l.source or "Web form",
-                        "Nhu cau Du an": l.demand or "",
-                        "Stage": l.stage or "New",
-                        "Lead Score": l.lead_score or 60,
-                        "Gia tri uoc tinh": l.estimated_value or 0
-                    }
-                })
-                existing_phones.add(l.phone)
+            records.append({
+                "id": l.id,
+                "fields": {
+                    "Ten cty Khach": l.company_name or "",
+                    "Nguoi lien he": l.contact_name or "",
+                    "So dien thoai": l.phone or "",
+                    "Email": l.email or "",
+                    "Nguon lead": l.source or "Web form",
+                    "Nhu cau Du an": l.demand or "",
+                    "Stage": l.stage or "New",
+                    "Lead Score": l.lead_score or 60,
+                    "Gia tri uoc tinh": l.estimated_value or 0
+                }
+            })
         db.close()
     except Exception as e:
-        print("[api_list_leads DB sync error]:", e)
+        print("[api_list_leads DB error]:", e)
 
-    return airtable_recs
+    if not records:
+        records = airtable_client.list_records("Lead & Pipeline") or []
+
+    redis_client.set("leads_list", records, expire_seconds=300)
+    return records
 
 # NV4: ZBS WIFIM
 @router.get("/zbs/templates")
@@ -247,40 +264,46 @@ def api_create_warranty(req: WarrantyCreateRequest):
         ktv_name=req.ktv_name or "Trần Minh Đức",
         send_zbs=req.send_zbs or False
     )
+    redis_client.delete("warranties_list")
+    redis_client.delete("kpi_summary")
     return res
 
 @router.get("/warranties")
 def api_list_warranties():
-    airtable_recs = airtable_client.list_records("Phieu Bao hanh") or []
-    existing_codes = {r.get("fields", {}).get("Ma phieu BH") for r in airtable_recs if r.get("fields", {}).get("Ma phieu BH")}
+    cached = redis_client.get("warranties_list")
+    if cached is not None:
+        return cached
 
+    records = []
     try:
         from app.core.database import SessionLocal
         from app.models.db_models import WarrantyTicket as DBWarrantyTicket
         db = SessionLocal()
         db_tickets = db.query(DBWarrantyTicket).order_by(DBWarrantyTicket.id.desc()).all()
         for t in db_tickets:
-            if t.ticket_code and t.ticket_code not in existing_codes:
-                airtable_recs.insert(0, {
-                    "id": t.id,
-                    "fields": {
-                        "Ma phieu BH": t.ticket_code,
-                        "Ten thiet bi": t.device_name or "",
-                        "Model": t.model or "",
-                        "Serial Number": t.serial_number or "",
-                        "Mo ta loi": t.error_desc or "",
-                        "Khach hang": t.customer_name or "",
-                        "So dien thoai": t.phone or "",
-                        "Trang thai": t.status or "Tiep nhan",
-                        "Muc do": t.urgency or "Thuong"
-                    }
-                })
-                existing_codes.add(t.ticket_code)
+            records.append({
+                "id": t.id,
+                "fields": {
+                    "Ma phieu BH": t.ticket_code,
+                    "Ten thiet bi": t.device_name or "",
+                    "Model": t.model or "",
+                    "Serial Number": t.serial_number or "",
+                    "Mo ta loi": t.error_desc or "",
+                    "Khach hang": t.customer_name or "",
+                    "So dien thoai": t.phone or "",
+                    "Trang thai": t.status or "Tiep nhan",
+                    "Muc do": t.urgency or "Thuong"
+                }
+            })
         db.close()
     except Exception as e:
-        print("[api_list_warranties DB sync error]:", e)
+        print("[api_list_warranties DB error]:", e)
 
-    return airtable_recs
+    if not records:
+        records = airtable_client.list_records("Phieu Bao hanh") or []
+
+    redis_client.set("warranties_list", records, expire_seconds=300)
+    return records
 
 # NV6: Tồn kho
 @router.get("/inventory/alerts")
@@ -289,41 +312,40 @@ def api_inventory_alerts():
 
 @router.get("/products")
 def api_list_products():
-    airtable_prods = airtable_client.list_products() or []
-    existing_names = set()
-    for p in airtable_prods:
-        f = p.get("fields", {})
-        name = f.get("Ten SP")
-        if name:
-            existing_names.add(name.strip().lower())
+    cached = redis_client.get("products_list")
+    if cached is not None:
+        return cached
 
+    records = []
     try:
         from app.core.database import SessionLocal
         from app.models.db_models import Product as DBProduct
         db = SessionLocal()
         db_prods = db.query(DBProduct).order_by(DBProduct.id.desc()).all()
         for dp in db_prods:
-            if dp.name and dp.name.strip().lower() not in existing_names:
-                airtable_prods.append({
-                    "id": dp.id,
-                    "fields": {
-                        "Ten SP": dp.name,
-                        "Ma SP": dp.sku,
-                        "Thuong hieu": dp.brand or "Chính hãng",
-                        "Nhom san pham": dp.category or "Loa",
-                        "Don vi tinh": dp.unit or "Cái",
-                        "Don gia ban": dp.sale_price or 0,
-                        "Don gia nhap TB": dp.import_price or 0,
-                        "Ton kho": dp.stock_quantity or 5,
-                        "Trang thai": dp.status or "Dang kinh doanh"
-                    }
-                })
-                existing_names.add(dp.name.strip().lower())
+            records.append({
+                "id": dp.id,
+                "fields": {
+                    "Ten SP": dp.name,
+                    "Ma SP": dp.sku,
+                    "Thuong hieu": dp.brand or "Chính hãng",
+                    "Nhom san pham": dp.category or "Loa",
+                    "Don vi tinh": dp.unit or "Cái",
+                    "Don gia ban": dp.sale_price or 0,
+                    "Don gia nhap TB": dp.import_price or 0,
+                    "Ton kho": dp.stock_quantity if dp.stock_quantity is not None else 5,
+                    "Trang thai": dp.status or "Dang kinh doanh"
+                }
+            })
         db.close()
     except Exception as e:
-        print("[api_list_products DB merge error]:", e)
+        print("[api_list_products DB error]:", e)
 
-    return airtable_prods
+    if not records:
+        records = airtable_client.list_products() or []
+
+    redis_client.set("products_list", records, expire_seconds=300)
+    return records
 
 @router.post("/products")
 def api_create_product(req: ProductCreateRequest):
@@ -391,6 +413,9 @@ def api_create_product(req: ProductCreateRequest):
     except Exception as e:
         print("[DB Insert Product Error]:", e)
 
+    redis_client.delete("products_list")
+    redis_client.delete("inventory_items")
+    redis_client.delete("kpi_summary")
     return {
         "success": True,
         "product": {
@@ -417,16 +442,35 @@ def api_kpi_summary():
     if cached:
         return cached
     data = get_kpi_summary()
-    redis_client.set("kpi_summary", data, expire_seconds=120)
+    redis_client.set("kpi_summary", data, expire_seconds=180)
     return data
 
 
 @router.patch("/leads/{lead_id}/stage")
 def api_update_lead_stage(lead_id: str, req: LeadStageUpdateRequest):
-    res = airtable_client.update_record("Lead & Pipeline", lead_id, {"Stage": req.stage})
-    if not res:
-        raise HTTPException(status_code=400, detail="Không thể cập nhật trạng thái Lead trên Airtable")
-    return {"success": True, "lead": res}
+    # 1. Cập nhật SQLite nội bộ trước
+    try:
+        from app.core.database import SessionLocal
+        from app.models.db_models import Lead as DBLead
+        db = SessionLocal()
+        lead = db.query(DBLead).filter((DBLead.id == lead_id) | (DBLead.phone == lead_id)).first()
+        if lead:
+            lead.stage = req.stage
+            db.commit()
+        db.close()
+    except Exception as e:
+        print("[DB update lead stage error]:", e)
+
+    # 2. Cập nhật Airtable
+    try:
+        airtable_client.update_record("Lead & Pipeline", lead_id, {"Stage": req.stage})
+    except Exception as e:
+        print("[Airtable update lead stage error]:", e)
+
+    # 3. Xóa cache tức thì
+    redis_client.delete("leads_list")
+    redis_client.delete("kpi_summary")
+    return {"success": True, "lead_id": lead_id, "stage": req.stage}
 
 
 # ==========================================
@@ -558,6 +602,10 @@ AUDIO_SOLUTION_PACKAGES = [
 
 @router.get("/intake/solutions")
 def api_get_intake_solutions():
+    cached = redis_client.get("intake_solutions")
+    if cached is not None:
+        return cached
+
     import json
     from app.core.database import SessionLocal
     from app.models.db_models import SolutionPackage
@@ -574,12 +622,16 @@ def api_get_intake_solutions():
                     "description": p.description,
                     "services": json.loads(p.services_json) if p.services_json else []
                 })
-            return {"success": True, "packages": res_pkgs}
+            res = {"success": True, "packages": res_pkgs}
+            redis_client.set("intake_solutions", res, expire_seconds=600)
+            return res
     except Exception as e:
         print("[Solutions DB Query Error]:", e)
     finally:
         db.close()
-    return {"success": True, "packages": AUDIO_SOLUTION_PACKAGES}
+    res = {"success": True, "packages": AUDIO_SOLUTION_PACKAGES}
+    redis_client.set("intake_solutions", res, expire_seconds=600)
+    return res
 
 @router.post("/intake/submit")
 def api_submit_audio_intake(req: AudioIntakeSubmitRequest):
@@ -712,6 +764,8 @@ def api_submit_audio_intake(req: AudioIntakeSubmitRequest):
     except Exception as e:
         print("[Intake ZBS Warning]:", e)
         
+    redis_client.delete("leads_list")
+    redis_client.delete("kpi_summary")
     return {
         "success": True,
         "tracking_code": tracking_code,
@@ -882,7 +936,11 @@ def api_download_quote(quote_id: str):
 # ==========================================
 @router.get("/inventory/items")
 def api_get_inventory_items():
-    """Lấy danh mục tồn kho thiết bị âm thanh trực tiếp từ Database."""
+    """Lấy danh mục tồn kho thiết bị âm thanh trực tiếp từ Database có Redis Caching."""
+    cached = redis_client.get("inventory_items")
+    if cached is not None:
+        return cached
+
     from app.core.database import SessionLocal
     from app.models.db_models import Product
     db = SessionLocal()
@@ -929,13 +987,15 @@ def api_get_inventory_items():
                 "status": status_stock
             })
             
-        return {
+        res = {
             "success": True,
             "total_value": total_value,
             "total_skus": len(inventory_items),
             "low_stock_count": low_stock_count,
             "items": inventory_items
         }
+        redis_client.set("inventory_items", res, expire_seconds=300)
+        return res
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
     finally:
@@ -946,7 +1006,29 @@ def api_inventory_transaction(req: InventoryTransactionRequest):
     """Ghi nhận giao dịch Nhập kho hoặc Xuất kho thiết bị."""
     try:
         now_str = datetime.now().strftime("%Y-%m-%d %H:%M")
-        # Ghi nhận log giao dịch kho vào Airtable
+        
+        # 1. Cập nhật số lượng tồn kho trực tiếp trong SQLite Database
+        try:
+            from app.core.database import SessionLocal
+            from app.models.db_models import Product as DBProduct
+            db = SessionLocal()
+            p = db.query(DBProduct).filter((DBProduct.id == req.product_id) | (DBProduct.sku == req.product_id)).first()
+            if p:
+                if req.type == "nhap":
+                    p.stock_quantity = (p.stock_quantity or 0) + req.quantity
+                else:
+                    p.stock_quantity = max(0, (p.stock_quantity or 0) - req.quantity)
+                db.commit()
+            db.close()
+        except Exception as se:
+            print("[DB Stock Update Error]:", se)
+
+        # 2. Xóa cache tức thì
+        redis_client.delete("inventory_items")
+        redis_client.delete("products_list")
+        redis_client.delete("kpi_summary")
+
+        # 3. Ghi nhận log giao dịch kho vào Airtable
         tx_fields = {
             "Ma giao dich": f"GD-{datetime.now().strftime('%Y%m%d-%H%M%S')}",
             "Loai giao dich": "Nhap kho" if req.type == "nhap" else "Xuat kho",
@@ -954,7 +1036,11 @@ def api_inventory_transaction(req: InventoryTransactionRequest):
             "Ly do": req.reason,
             "Ghi chu": req.notes or f"{req.staff_name} thực hiện lúc {now_str}"
         }
-        airtable_client.create_record("Giao dich kho", tx_fields)
+        try:
+            airtable_client.create_record("Giao dich kho", tx_fields)
+        except Exception:
+            pass
+
         return {
             "success": True,
             "transaction_id": tx_fields["Ma giao dich"],
@@ -963,7 +1049,6 @@ def api_inventory_transaction(req: InventoryTransactionRequest):
             "message": f"Đã ghi nhận {'Nhập kho' if req.type == 'nhap' else 'Xuất kho'} {req.quantity} {req.product_name} thành công!"
         }
     except Exception as e:
-        # Trả về thành công mô phỏng nếu bảng Airtable chưa mapping
         return {
             "success": True,
             "transaction_id": f"GD-{datetime.now().strftime('%Y%m%d-%H%M%S')}",

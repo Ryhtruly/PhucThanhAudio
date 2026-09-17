@@ -94,12 +94,24 @@ export default function App() {
   };
 
   const [activeTab, setActiveTab] = useState('dashboard');
-  const [kpiData, setKpiData] = useState(null);
-  const [products, setProducts] = useState([]);
-  const [contracts, setContracts] = useState([]);
-  const [quotes, setQuotes] = useState([]);
-  const [leads, setLeads] = useState([]);
-  const [warranties, setWarranties] = useState([]);
+  const [kpiData, setKpiData] = useState(() => {
+    try { return JSON.parse(localStorage.getItem('pt_kpiData') || 'null'); } catch { return null; }
+  });
+  const [products, setProducts] = useState(() => {
+    try { return JSON.parse(localStorage.getItem('pt_products') || '[]'); } catch { return []; }
+  });
+  const [contracts, setContracts] = useState(() => {
+    try { return JSON.parse(localStorage.getItem('pt_contracts') || '[]'); } catch { return []; }
+  });
+  const [quotes, setQuotes] = useState(() => {
+    try { return JSON.parse(localStorage.getItem('pt_quotes') || '[]'); } catch { return []; }
+  });
+  const [leads, setLeads] = useState(() => {
+    try { return JSON.parse(localStorage.getItem('pt_leads') || '[]'); } catch { return []; }
+  });
+  const [warranties, setWarranties] = useState(() => {
+    try { return JSON.parse(localStorage.getItem('pt_warranties') || '[]'); } catch { return []; }
+  });
 
   const [intakePackages, setIntakePackages] = useState([]);
   const [selectedPkgId, setSelectedPkgId] = useState('karaoke_vip');
@@ -315,8 +327,15 @@ export default function App() {
 
 
 
+  const [isRefreshing, setIsRefreshing] = useState(false);
+
   const fetchInitialData = async () => {
-    setLoading(true);
+    const hasExistingData = !!kpiData || (contracts && contracts.length > 0);
+    if (!hasExistingData) {
+      setLoading(true);
+    } else {
+      setIsRefreshing(true);
+    }
     try {
       const [kpiRes, prodRes, contRes, quotRes, leadRes, warRes] = await Promise.all([
         fetch(`${API_BASE}/kpi/summary`).then(r => r.json()).catch(() => null),
@@ -326,33 +345,61 @@ export default function App() {
         fetch(`${API_BASE}/leads`).then(r => r.json()).catch(() => []),
         fetch(`${API_BASE}/warranties`).then(r => r.json()).catch(() => [])
       ]);
-      if (kpiRes) setKpiData(kpiRes);
-      if (prodRes && Array.isArray(prodRes)) setProducts(prodRes);
-      if (contRes && Array.isArray(contRes)) setContracts(contRes);
-      if (quotRes && Array.isArray(quotRes)) setQuotes(quotRes);
-      if (leadRes && Array.isArray(leadRes)) setLeads(leadRes);
-      if (warRes && Array.isArray(warRes)) setWarranties(warRes);
+      if (kpiRes) {
+        setKpiData(kpiRes);
+        try { localStorage.setItem('pt_kpiData', JSON.stringify(kpiRes)); } catch {}
+      }
+      if (prodRes && Array.isArray(prodRes)) {
+        setProducts(prodRes);
+        try { localStorage.setItem('pt_products', JSON.stringify(prodRes)); } catch {}
+      }
+      if (contRes && Array.isArray(contRes)) {
+        setContracts(contRes);
+        try { localStorage.setItem('pt_contracts', JSON.stringify(contRes)); } catch {}
+      }
+      if (quotRes && Array.isArray(quotRes)) {
+        setQuotes(quotRes);
+        try { localStorage.setItem('pt_quotes', JSON.stringify(quotRes)); } catch {}
+      }
+      if (leadRes && Array.isArray(leadRes)) {
+        setLeads(leadRes);
+        try { localStorage.setItem('pt_leads', JSON.stringify(leadRes)); } catch {}
+      }
+      if (warRes && Array.isArray(warRes)) {
+        setWarranties(warRes);
+        try { localStorage.setItem('pt_warranties', JSON.stringify(warRes)); } catch {}
+      }
     } catch (e) {
       console.error(e);
     } finally {
       setLoading(false);
+      setIsRefreshing(false);
     }
   };
 
   // NV6: Inventory State
-  const [inventoryData, setInventoryData] = useState({ total_value: 0, total_skus: 0, low_stock_count: 0, items: [] });
+  const [inventoryData, setInventoryData] = useState(() => {
+    try { 
+      return JSON.parse(localStorage.getItem('pt_inventoryData') || 'null') || { total_value: 0, total_skus: 0, low_stock_count: 0, items: [] }; 
+    } catch { 
+      return { total_value: 0, total_skus: 0, low_stock_count: 0, items: [] }; 
+    }
+  });
   const [loadingInventory, setLoadingInventory] = useState(false);
   const [invFilter, setInvFilter] = useState('all'); // 'all', 'low_stock'
   const [showTxModal, setShowTxModal] = useState(false);
   const [txForm, setTxForm] = useState({ product_id: '', product_name: '', type: 'nhap', quantity: 1, reason: 'Nhập hàng từ nhà phân phối', staff_name: 'Thủ kho Nguyễn Văn Nam' });
 
   const fetchInventory = async () => {
-    setLoadingInventory(true);
+    if (!inventoryData.items || inventoryData.items.length === 0) {
+      setLoadingInventory(true);
+    }
     try {
       const res = await fetch(`${API_BASE}/inventory/items`);
       const data = await res.json();
       if (data && data.success) {
         setInventoryData(data);
+        try { localStorage.setItem('pt_inventoryData', JSON.stringify(data)); } catch {}
       }
     } catch (e) {
       console.error("Lỗi nạp tồn kho:", e);

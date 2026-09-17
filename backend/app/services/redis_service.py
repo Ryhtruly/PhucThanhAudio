@@ -1,16 +1,22 @@
+import os
 import json
 try:
     import redis
 except ImportError:
     redis = None
 from typing import Any, Optional
+from app.core.config import settings
 
 class RedisService:
-    def __init__(self, host: str = "localhost", port: int = 6379, db: int = 0):
+    def __init__(self, host: Optional[str] = None, port: Optional[int] = None, db: Optional[int] = None):
         self._fallback_cache = {}
         self.is_connected = False
         self.client = None
         
+        host = host or os.getenv("REDIS_HOST", getattr(settings, "REDIS_HOST", "localhost"))
+        port = int(port or os.getenv("REDIS_PORT", getattr(settings, "REDIS_PORT", 6379)))
+        db = int(db if db is not None else os.getenv("REDIS_DB", getattr(settings, "REDIS_DB", 0)))
+
         if redis is None:
             # Fallback memory cache khi chưa cài thư viện redis
             return
@@ -25,7 +31,7 @@ class RedisService:
             )
             self.client.ping()
             self.is_connected = True
-            print(" Redis Connected successfully to localhost:6379/0")
+            print(f" Redis Connected successfully to {host}:{port}/{db}")
         except Exception as e:
             print(f"[Redis Warning] Cannot connect to Redis ({e}). Running with fallback memory cache.")
             self.client = None
