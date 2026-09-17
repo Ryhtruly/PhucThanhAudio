@@ -29,13 +29,15 @@ Backend tự động tính toán tổng doanh số từ các Hợp đồng có g
 {
   "action": "ANSWER",
   "blocks": [
-    "📊 **Báo Cáo Điều Hành Doanh Thu — Phúc Thanh Audio**",
-    "• **Tổng doanh thu thuần:** `3,850,000,000 đ` (~ 3.85 Tỷ)",
-    "• **Tổng số Hợp đồng phát hành:** 14 hợp đồng",
-    "• **Báo giá dự án phát hành:** 28 hồ sơ",
-    "• **Hợp đồng đã ký:** 8 khách hàng",
-    "• **Nhóm giải pháp dẫn đầu:** **Karaoke VIP & Lounge** (42%)",
-    "• **Cập nhật:** 17/09/2026"
+    "📊 **Báo Cáo Điều Hành Doanh Thu (CEO) — Phúc Thanh Audio**",
+    "• **Doanh thu thuần thực đạt (Đã ký kết):** `215,000,000 đ` (1 hợp đồng đã ký)",
+    "• **Dự thu chờ duyệt ký (Pipeline):** `4,915,518,182 đ` (22 hợp đồng đang chờ ký)",
+    "• **Tổng quy mô hợp đồng:** `5,130,518,182 đ` (~ 5.13 Tỷ)",
+    "• **Tổng số Hợp đồng:** 23 hợp đồng (1 Đã ký | 22 Chờ ký)",
+    "• **Báo giá dự án phát hành:** 14 hồ sơ",
+    "• **Cơ hội chốt thành công (Won):** 2 khách hàng",
+    "• **Nhóm giải pháp dẫn đầu:** **Hội Trường & Sự Kiện** (52%)",
+    "• **Cập nhật:** 17/09/2026 14:50"
   ],
   "data": {
     "total_revenue": 3850000000,

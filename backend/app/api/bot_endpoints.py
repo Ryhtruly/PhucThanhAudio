@@ -10,6 +10,7 @@ from app.services.operations_services import (
 )
 from app.services.airtable_service import airtable_client
 from app.services.zbs_service import zbs_client
+from app.services.redis_service import redis_client
 from app.core.database import SessionLocal
 from app.models.db_models import Contract, Lead, Quote, WarrantyTicket, Product, KPIMonthlyReport
 
@@ -42,6 +43,7 @@ class BotQuoteRequest(BaseModel):
     discount: Optional[int] = 0
     discount_percent: Optional[float] = 0
     chiet_khau: Optional[int] = 0
+    ck: Optional[int] = 0
     sales_rep: Optional[str] = "Nguyễn Văn Tuấn"
     send_zbs: Optional[bool] = True
 
@@ -160,6 +162,7 @@ def bot_nv2_create_quote(req: BotQuoteRequest):
         discount=req.discount or 0,
         discount_percent=req.discount_percent or 0,
         chiet_khau=req.chiet_khau or 0,
+        ck=req.ck or 0,
         sales_rep=req.sales_rep or "Nguyễn Văn Tuấn",
         send_zbs=req.send_zbs if req.send_zbs is not None else True
     )
@@ -412,7 +415,11 @@ def bot_nv6_stock_check():
 def bot_nv7_kpi_report():
     """Bot gọi vào sáng Thứ 2 để gửi báo cáo tóm tắt chỉ số điều hành cho CEO qua Telegram."""
     kpi = get_kpi_summary()
-    rev = kpi.get("total_revenue", 0)
+    signed_rev = kpi.get("net_revenue_signed", 0)
+    pending_rev = kpi.get("pending_revenue", 0)
+    signed_cnt = kpi.get("signed_contracts_count", 0)
+    pending_cnt = kpi.get("pending_contracts_count", 0)
+    total_pipeline = signed_rev + pending_rev
     conts = kpi.get("total_contracts", 0)
     quotes_cnt = kpi.get("total_quotes", 0)
     won = kpi.get("won_deals", 0)
@@ -421,10 +428,12 @@ def bot_nv7_kpi_report():
 
     blocks = [
         f"📊 **Báo Cáo Điều Hành Doanh Thu (CEO) — Phúc Thanh Audio**",
-        f"• **Tổng doanh thu hợp đồng:** `{rev:,.0f} đ` (~ {(rev/1000000000):.2f} Tỷ)",
-        f"• **Tổng số Hợp đồng:** {conts} hợp đồng",
-        f"• **Báo giá ISO phát hành:** {quotes_cnt} hồ sơ",
-        f"• **Deal chốt thành công (Won):** {won} khách hàng",
+        f"• **Doanh thu thuần thực đạt (Đã ký kết):** `{signed_rev:,.0f} đ` ({signed_cnt} hợp đồng đã ký)",
+        f"• **Dự thu chờ duyệt ký (Pipeline):** `{pending_rev:,.0f} đ` ({pending_cnt} hợp đồng đang chờ ký)",
+        f"• **Tổng quy mô hợp đồng:** `{total_pipeline:,.0f} đ` (~ {(total_pipeline/1000000000):.2f} Tỷ)",
+        f"• **Tổng số Hợp đồng:** {conts} hợp đồng ({signed_cnt} Đã ký | {pending_cnt} Chờ ký)",
+        f"• **Báo giá dự án phát hành:** {quotes_cnt} hồ sơ",
+        f"• **Cơ hội chốt thành công (Won):** {won} khách hàng",
         f"• **Nhóm giải pháp dẫn đầu:** **{top_sol.get('name')}** ({top_sol.get('percent')}%)",
         f"• **Cập nhật:** {kpi.get('last_updated', datetime.now().strftime('%d/%m/%Y %H:%M'))}"
     ]

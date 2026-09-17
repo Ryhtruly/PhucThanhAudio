@@ -13,6 +13,7 @@ class QuoteItemSchema(BaseModel):
     discount: Optional[int] = 0
     discount_percent: Optional[float] = 0
     chiet_khau: Optional[int] = 0
+    ck: Optional[int] = 0
     product_id: Optional[str] = None
 
 class ContractCreateRequest(BaseModel):
@@ -42,6 +43,7 @@ class QuoteCreateRequest(BaseModel):
     discount: Optional[int] = 0
     discount_percent: Optional[float] = 0
     chiet_khau: Optional[int] = 0
+    ck: Optional[int] = 0
     sales_rep: Optional[str] = "Nguyễn Văn Tuấn"
     delivery_notes: Optional[str] = "Giao hàng và lắp đặt tận nơi trong vòng 03 ngày làm việc."
     warranty_notes: Optional[str] = "Bảo hành chính hãng 24 tháng theo tiêu chuẩn nhà sản xuất."

@@ -138,6 +138,7 @@ def api_create_quote(req: QuoteCreateRequest):
         discount=req.discount or 0,
         discount_percent=req.discount_percent or 0,
         chiet_khau=req.chiet_khau or 0,
+        ck=req.ck or 0,
         sales_rep=req.sales_rep,
         delivery_notes=req.delivery_notes,
         warranty_notes=req.warranty_notes,

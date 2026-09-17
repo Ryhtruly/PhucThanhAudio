@@ -17,6 +17,7 @@ def create_quote(
     discount: Optional[int] = 0,
     discount_percent: Optional[float] = 0,
     chiet_khau: Optional[int] = 0,
+    ck: Optional[int] = 0,
     sales_rep: str = "Nguyễn Văn Tuấn",
     delivery_notes: str = "Giao hàng và lắp đặt tận nơi trong vòng 03 ngày làm việc.",
     warranty_notes: str = "Bảo hành chính hãng 24 tháng theo tiêu chuẩn nhà sản xuất.",
@@ -41,8 +42,8 @@ def create_quote(
         qty = int(it.get("quantity") or it.get("qty") or 1)
         price = int(it.get("price") or it.get("sale_price") or 0)
         
-        # Chiết khấu từng dòng (nếu có)
-        it_discount = int(it.get("discount") or it.get("chiet_khau") or 0)
+        # Chiết khấu từng dòng (hỗ trợ discount, chiet_khau hoặc alias ck)
+        it_discount = int(it.get("discount") or it.get("chiet_khau") or it.get("ck") or 0)
         if 0 < it_discount <= 100:
             it_discount_val = int(round(qty * price * (it_discount / 100.0)))
         else:
@@ -62,7 +63,7 @@ def create_quote(
             "product_id": it.get("product_id")
         })
         
-    # 2. Tính chiết khấu đơn hàng tổng thể
+    # 2. Tính chiết khấu đơn hàng tổng thể (hỗ trợ discount, discount_percent, chiet_khau hoặc ck)
     order_discount = 0
     if discount_percent and float(discount_percent) > 0:
         order_discount = int(round(items_total * (float(discount_percent) / 100.0)))
@@ -74,6 +75,12 @@ def create_quote(
             order_discount = d_val
     elif chiet_khau and int(chiet_khau) > 0:
         ck_val = int(chiet_khau)
+        if ck_val <= 100:
+            order_discount = int(round(items_total * (ck_val / 100.0)))
+        else:
+            order_discount = ck_val
+    elif ck and int(ck) > 0:
+        ck_val = int(ck)
         if ck_val <= 100:
             order_discount = int(round(items_total * (ck_val / 100.0)))
         else:

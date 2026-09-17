@@ -18,8 +18,7 @@ Kích hoạt khi người dùng có ý định lập hoặc xin bảng báo giá
 - **Contact Name:** Người liên hệ trực tiếp.
 - **Phone:** Số điện thoại để gửi Zalo ZNS / SMS.
 - **Project Name:** Tên công trình/dự án (Ví dụ: "Hệ thống âm thanh hội trường 300 chỗ").
-- **Items:** Danh sách thiết bị (Tên, Số lượng, Đơn giá dự kiến, Thương hiệu, có thể có chiết khấu từng dòng).
-- **Discount / Chiết khấu:** (Tùy chọn) `discount` (hoặc `chiet_khau`, `discount_percent`). Nếu $\le 100$ được hiểu là %, nếu $> 100$ được hiểu là số tiền VNĐ.
+- **Discount / Chiết khấu:** (Tùy chọn) `discount`, `chiet_khau`, `discount_percent` hoặc viết tắt `ck`. Nếu $\le 100$ được hiểu là %, nếu $> 100$ được hiểu là số tiền VNĐ. Có thể truyền ở cấp độ toàn đơn hàng hoặc từng dòng thiết bị.
 - **Include VAT:** Mặc định `true` (VAT 10%).
 
 > [!NOTE]
