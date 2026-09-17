@@ -8,7 +8,7 @@ export const API_BASE = import.meta.env.VITE_API_BASE || (import.meta.env.VITE_B
 
 // 2. Thông tin thương hiệu
 export const APP_TITLE = import.meta.env.VITE_APP_TITLE || 'Phúc Thanh Audio';
-export const APP_SUBTITLE = import.meta.env.VITE_APP_SUBTITLE || 'Hệ Thống Quản Trị & Tự Động Hóa Chuyển Đổi Số';
+export const APP_SUBTITLE = import.meta.env.VITE_APP_SUBTITLE || 'Hệ Thống Quản Trị Doanh Nghiệp (ERP)';
 export const COMPANY_NAME = import.meta.env.VITE_COMPANY_NAME || 'Công ty TNHH XNK TM DV Phúc Thanh Audio';
 export const COMPANY_ADDRESS = import.meta.env.VITE_COMPANY_ADDRESS || '605 Lũy Bán Bích, P. Phú Thạnh, Q. Tân Phú, TP. Hồ Chí Minh';
 

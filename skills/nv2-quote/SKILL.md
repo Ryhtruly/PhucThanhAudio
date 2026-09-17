@@ -1,29 +1,29 @@
 ---
 name: nv2-quote
-description: Xuất bảng báo giá thiết bị âm thanh chuyên nghiệp chuẩn ISO, tự động tính toán thuế VAT, chiết khấu và sinh file Word .docx gửi kèm link cho khách hàng hoặc Sales.
+description: Lập bảng báo giá dự án âm thanh chuyên nghiệp theo mẫu văn bản quy chuẩn, tự động tính toán thuế VAT, kết xuất tài liệu Word .docx và gửi kèm đường dẫn cho khách hàng hoặc nhân viên kinh doanh.
 ---
 
-# NV2: Báo Giá Tự Động ISO Thiết Bị Âm Thanh
+# NV2: Lập Báo Giá Dự Án Thiết Bị Âm Thanh
 
-Skill này hướng dẫn Bot tiếp nhận yêu cầu báo giá dự án âm thanh từ Sales hoặc khách hàng và gọi Backend tạo bảng báo giá ISO hoàn chỉnh.
+Skill này hướng dẫn Trợ lý hội thoại tiếp nhận yêu cầu lập báo giá dự án âm thanh từ nhân viên kinh doanh hoặc khách hàng và gọi Backend tạo bảng báo giá quy chuẩn hoàn chỉnh.
 
 ## 1. Khi Nào Kích Hoạt Skill?
-Kích hoạt khi người dùng có ý định xin/lập báo giá:
+Kích hoạt khi người dùng có ý định lập hoặc xin bảng báo giá:
 - *"Báo giá cho anh Dũng bên Sky Bar Landmark 81 gói âm thanh gồm 4 cặp loa SR HR-12 và 2 đẩy công suất"*
 - *"Tạo báo giá dự án hội trường UBND Phường Bến Nghé, SĐT 0912345678"*
-- *"Gửi báo giá bộ karaoke gia đình cao cấp cho chị Mai"*
+- *"Gửi báo giá cấu hình karaoke gia đình cao cấp cho chị Mai"*
 
 ## 2. Thông Tin Cần Thu Thập
 - **Company Name / Khách hàng:** Tên đơn vị hoặc cá nhân nhận báo giá.
 - **Contact Name:** Người liên hệ trực tiếp.
-- **Phone:** Số điện thoại để gửi Zalo / SMS.
+- **Phone:** Số điện thoại để gửi Zalo ZNS / SMS.
 - **Project Name:** Tên công trình/dự án (Ví dụ: "Hệ thống âm thanh hội trường 300 chỗ").
 - **Items:** Danh sách thiết bị (Tên, Số lượng, Đơn giá dự kiến, Thương hiệu).
-- **Include VAT:** Mặc định `true` (8% hoặc 10%).
+- **Include VAT:** Mặc định `true` (VAT 10%).
 
 ## 3. Gọi Backend API
 
-- **Endpoint:** `POST https://phucthanhaudio.wiai.vn/api/nv2/quote`
+- **Endpoint:** `POST https://apiphucthanhaudio.wiai.vn/api/nv2/quote`
 - **Headers:**
   - `Content-Type: application/json`
   - `ngrok-skip-browser-warning: true`
@@ -65,33 +65,33 @@ Kích hoạt khi người dùng có ý định xin/lập báo giá:
 }
 ```
 
-## 4. Cách Bot Xử Lý Phản Hồi
+## 4. Cách Xử Lý Phản Hồi
 
-Backend xử lý tính toán tổng tiền, VAT, tạo mã `BG-xxxx`, sinh file Word chuẩn ISO và trả về:
+Backend xử lý tính toán tổng tiền, VAT, tạo mã `BG-xxxx`, sinh file Word chuẩn và xóa cache Redis tương ứng:
 ```json
 {
   "action": "ANSWER",
   "blocks": [
-    "📄 **Đã xuất Báo Giá ISO thành công!**",
+    "📄 **Đã xuất Báo Giá thành công!**",
     "• **Mã Báo Giá:** `BG-2026-0812`",
     "• **Dự án:** Gói âm thanh Lounge & Rooftop Bar",
     "• **Khách hàng:** Công ty Cổ phần Giải trí SkyLight (Anh Nguyễn Hoàng Dũng - 0912345678)",
     "• **Tổng cộng:** `239,800,000 đ`",
-    "• **Tải file Word .docx:** [Tải Báo Giá](https://phucthanhaudio.wiai.vn/api/v1/quotes/BG-2026-0812/BG-2026-0812.docx)",
-    "• **Thông báo ZBS:** Đã kích hoạt"
+    "• **Tải file Word .docx:** [Tải Báo Giá](https://apiphucthanhaudio.wiai.vn/api/v1/quotes/BG-2026-0812/BG-2026-0812.docx)",
+    "• **Thông báo Zalo ZNS:** Đã kích hoạt"
   ],
   "data": { ... }
 }
 ```
 
-- **Bot render trực tiếp các dòng trong `blocks`** và cung cấp link tải báo giá Word cho người yêu cầu.
+- **Trợ lý hiển thị trực tiếp các dòng trong `blocks`** và cung cấp liên kết tải file Word.
 
 ---
 
 ## 5. Thêm Thiết Bị Mới Vào Bảng Giá Qua Chat
 
-Khi người dùng yêu cầu thêm sản phẩm mới vào danh mục bảng giá (ví dụ: *"Thêm sản phẩm Loa Subwoofer SR SW-218 giá 45 triệu"*):
-- **Endpoint:** `POST https://phucthanhaudio.wiai.vn/api/nv2/product`
+Khi người dùng yêu cầu bổ sung thiết bị mới vào danh mục bảng giá (ví dụ: *"Thêm sản phẩm Loa Subwoofer SR SW-218 giá 45 triệu"*):
+- **Endpoint:** `POST https://apiphucthanhaudio.wiai.vn/api/nv2/product`
 - **Method:** `POST`
 - **Body Mẫu:**
   ```json
@@ -104,5 +104,4 @@ Khi người dùng yêu cầu thêm sản phẩm mới vào danh mục bảng gi
     "stock_quantity": 5
   }
   ```
-- Backend sẽ tự động lưu vào SQLite Database (`phucthanh.db`) và đồng bộ lên Airtable bảng `San pham & Bang gia`. Thiết bị sẽ lập tức hiển thị trên giao diện Quote Studio của Web Quản Trị.
-
+- Backend sẽ tự động lưu vào Cơ sở dữ liệu SQLite (`phucthanh.db`), xóa cache Redis và đồng bộ lên Airtable bảng `San pham & Bang gia`. Thiết bị sẽ hiển thị tức thì trên giao diện quản trị `https://phucthanhaudio.wiai.vn/`.

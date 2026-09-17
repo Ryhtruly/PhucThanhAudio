@@ -1,27 +1,27 @@
 ---
 name: nv3-pipeline
-description: Tự động quét cơ hội kinh doanh (Leads) mới vào mỗi buổi sáng, nhắc việc chăm sóc khách hàng và cập nhật giai đoạn Pipeline (New, Qualified, Đàm phán, Won, Lost) từ lệnh chat.
+description: Quản lý khách hàng và tiến trình cơ hội kinh doanh (CRM), nhắc việc chăm sóc khách hàng và cập nhật 5 giai đoạn bán hàng (Tiếp nhận ban đầu, Khảo sát hiện trạng, Đàm phán & báo giá, Ký kết hợp đồng, Thất bại).
 ---
 
-# NV3: Quét Lead & Cập Nhật Pipeline Bán Hàng
+# NV3: Quản Lý Khách Hàng & Cơ Hội Bán Hàng (CRM)
 
-Skill này phục vụ 2 nghiệp vụ chính của Sales:
-1. **Quét tự động định kỳ (Morning Scan):** Vào đầu giờ sáng (8h00 - 8h30), Bot tự động quét và điểm danh các cơ hội kinh doanh mới hoặc lead nóng cần chốt.
-2. **Cập nhật giai đoạn cơ hội (Update Deal):** Nhân viên chat với Bot để chuyển đổi trạng thái lead (Ví dụ: Chuyển sang Gặp Demo, Đàm phán, hoặc Chốt Won).
+Skill này phục vụ 2 nghiệp vụ quản trị khách hàng của đội ngũ Kinh doanh:
+1. **Quét cơ hội định kỳ (Morning Scan):** Vào đầu giờ sáng (8h00 - 8h30), hệ thống điểm danh các cơ hội kinh doanh mới hoặc khách hàng trọng điểm cần liên hệ.
+2. **Cập nhật giai đoạn cơ hội (Update Stage):** Nhân viên cập nhật tiến độ giao dịch qua hội thoại (chuyển sang Khảo sát hiện trạng, Đàm phán, hoặc Ký kết hợp đồng).
 
 ---
 
-## Nghiệp Vụ 1: Quét Lead Sáng Nay (Morning Scan)
+## Nghiệp Vụ 1: Điểm Danh Cơ Hội Bán Hàng (Morning Scan)
 
 ### Khi Nào Kích Hoạt?
-- Lịch Cron tự động của Bot lúc 8h00 sáng mỗi ngày làm việc.
-- Hoặc Sales chat hỏi:
-  - *"Sáng nay có lead nào mới không?"*
-  - *"Quét danh sách khách hàng cần gọi hôm nay"*
-  - *"Tình hình pipeline bán hàng hiện tại"*
+- Lịch tự động lúc 8h00 sáng mỗi ngày làm việc.
+- Hoặc nhân viên kinh doanh hỏi:
+  - *"Sáng nay có khách hàng nào mới cần liên hệ không?"*
+  - *"Danh sách cơ hội cần gọi chăm sóc hôm nay"*
+  - *"Tình hình tiến độ bán hàng hiện tại"*
 
 ### Gọi API Backend:
-- **Endpoint:** `POST https://phucthanhaudio.wiai.vn/api/nv3/morning_scan`
+- **Endpoint:** `POST https://apiphucthanhaudio.wiai.vn/api/nv3/morning_scan`
 - **Headers:**
   - `Content-Type: application/json`
   - `ngrok-skip-browser-warning: true`
@@ -32,14 +32,14 @@ Skill này phục vụ 2 nghiệp vụ chính của Sales:
 {
   "action": "ANSWER",
   "blocks": [
-    "🌅 **Báo cáo Pipeline Sáng Nay — Phúc Thanh Audio**",
+    "🌅 **Báo cáo Cơ Hội Bán Hàng — Phúc Thanh Audio**",
     "• **Tổng số cơ hội:** 12 khách hàng",
-    "• **Deal đã chốt (Won):** 5 deal",
-    "• **Cần xử lý gấp:** 2 lead mới trong hôm nay",
+    "• **Hợp đồng đã ký:** 5 dự án",
+    "• **Cần xử lý trong ngày:** 2 khách hàng mới tiếp nhận",
     "",
-    "**Danh sách Lead ưu tiên:**",
-    "1. **Karaoke Họa Mi** (Anh Tuấn - `0908123456`) — Dự toán: `450,000,000 đ` [Điểm: 85]",
-    "2. **Bar Havana Club** (Chị Thảo - `0918765432`) — Dự toán: `800,000,000 đ` [Điểm: 92]"
+    "**Danh sách khách hàng ưu tiên cao:**",
+    "1. **Karaoke Họa Mi** (Anh Tuấn - `0908123456`) — Dự toán: `450,000,000 đ` [Ưu tiên: Cao]",
+    "2. **Bar Havana Club** (Chị Thảo - `0918765432`) — Dự toán: `800,000,000 đ` [Ưu tiên: Cao]"
   ],
   "data": { ... }
 }
@@ -47,24 +47,23 @@ Skill này phục vụ 2 nghiệp vụ chính của Sales:
 
 ---
 
-## Nghiệp Vụ 2: Cập Nhật Trạng Thái Deal (Update Deal Stage)
+## Nghiệp Vụ 2: Cập Nhật Giai Đoạn Bán Hàng (Update Deal Stage)
 
 ### Khi Nào Kích Hoạt?
-Khi Sales thông báo tiến độ giao dịch:
-- *"Chuyển deal Karaoke Họa Mi sang Đàm phán"*
-- *"Deal anh Tuấn 0908123456 đã chốt Won rồi nhé"*
-- *"Đổi trạng thái deal rec123abc sang Won"*
+Khi nhân viên kinh doanh thông báo tiến trình giao dịch:
+- *"Chuyển khách hàng Karaoke Họa Mi sang giai đoạn Đàm phán"*
+- *"Dự án anh Tuấn 0908123456 đã chốt ký hợp đồng rồi nhé"*
+- *"Đổi trạng thái cơ hội sang Ký kết hợp đồng"*
 
-### Quy Tắc Chuyển Giai Đoạn:
-Hệ thống hỗ trợ 5 giai đoạn:
-- `New`: Khách hàng mới gửi thông tin
-- `Qualified`: Đã khảo sát công trình & demo âm thanh
-- `Dam phan`: Đang thương thảo hợp đồng / báo giá
-- `Won`: Ký hợp đồng thành công 🎉
-- `Lost`: Thất bại / Hủy dự án
+### Quy Tắc 5 Giai Đoạn Bán Hàng Chuẩn:
+- `New`: **Tiếp Nhận Ban Đầu** (Khách hàng gửi thông tin/đăng ký)
+- `Qualified`: **Khảo Sát Hiện Trạng** (Đã khảo sát thực địa & tư vấn giải pháp)
+- `Dam phan`: **Đàm Phán & Báo Giá** (Đang thương thảo điều khoản/bảng giá)
+- `Won`: **Ký Kết Hợp Đồng** (Hoàn tất ký hợp đồng kinh tế)
+- `Lost`: **Thất Bại / Hủy Bỏ** (Dự án dừng hoặc khách hủy)
 
 ### Gọi API Backend:
-- **Endpoint:** `PUT https://phucthanhaudio.wiai.vn/api/nv3/deal/{deal_id_hoac_sdt}`
+- **Endpoint:** `PUT https://apiphucthanhaudio.wiai.vn/api/nv3/deal/{deal_id_hoac_sdt}`
 - **Headers:**
   - `Content-Type: application/json`
   - `ngrok-skip-browser-warning: true`
@@ -82,10 +81,11 @@ Hệ thống hỗ trợ 5 giai đoạn:
   "action": "ANSWER",
   "blocks": [
     "🎯 **Cập nhật trạng thái cơ hội thành công!**",
-    "• **Mã Lead:** `0908123456`",
-    "• **Giai đoạn mới:** Ký Hợp Đồng Thành Công (Won) 🎉",
-    "👉 *Deal đã chuyển thành công, bạn có thể gọi NV1 để tạo Hợp đồng ngay!*"
+    "• **Mã Khách Hàng:** `0908123456`",
+    "• **Giai đoạn mới:** Ký Kết Hợp Đồng",
+    "👉 *Cơ hội đã hoàn tất, bạn có thể gọi NV1 để khởi tạo Hợp đồng kinh tế ngay!*"
   ],
   "data": { "deal_id": "0908123456", "stage": "Won", "updated": true }
 }
 ```
+Mọi thay đổi trạng thái sẽ đồng thời tự động xóa cache Redis (`leads_list_v1`) để giao diện Web tại `https://phucthanhaudio.wiai.vn/` cập nhật tức thì.
