@@ -34,6 +34,7 @@ jobs:
             cd "$PROJECT_DIR"
 
             echo "📥 Pulling latest changes from branch main..."
+            git stash || true
             git pull origin main
 
             echo "🐳 Building and starting Docker containers..."
