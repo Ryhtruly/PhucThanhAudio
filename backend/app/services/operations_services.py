@@ -230,8 +230,9 @@ def get_kpi_summary() -> Dict[str, Any]:
                 parts = c.contract_code.split("-")
                 if len(parts[1]) == 6 and parts[1].isdigit():
                     m_key = parts[1]
-            if not m_key and c.signing_date:
-                m_key = c.signing_date.replace("-", "")[:6]
+            signing_date_val = getattr(c, 'signing_date', None)
+            if not m_key and signing_date_val:
+                m_key = signing_date_val.replace("-", "")[:6]
             if not m_key:
                 m_key = "202609"
 

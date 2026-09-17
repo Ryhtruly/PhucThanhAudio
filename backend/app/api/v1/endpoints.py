@@ -1,6 +1,7 @@
 import os
 import urllib.parse
 from datetime import datetime
+from typing import Optional, List, Dict, Any
 from app.core.config import settings
 from fastapi.responses import FileResponse
 from app.services.redis_service import redis_client
@@ -550,17 +551,38 @@ def api_update_lead_stage(lead_id: str, req: LeadStageUpdateRequest):
 
     # 3. Nếu chuyển sang 'Won' (Ký Kết Hợp Đồng) -> Tự động khởi tạo Hợp đồng mới
     created_contract_code = None
-    if target_stage == "Won" and lead_info:
-        try:
-            created_contract_code = auto_create_contract_for_won_lead(
-                company_name=lead_info.get("company_name", "Khách hàng"),
-                contact_name=lead_info.get("contact_name", ""),
-                phone=lead_info.get("phone", ""),
-                estimated_value=lead_info.get("estimated_value", 0),
-                demand=lead_info.get("demand", "")
-            )
-        except Exception as e_c:
-            print("[Auto create contract trigger error]:", e_c)
+    if target_stage == "Won":
+        # Nếu lead_info rỗng (lead chỉ tồn tại trong Airtable), fallback fetch
+        if not lead_info:
+            try:
+                at_records = airtable_client.list_records("Lead & Pipeline") or []
+                for r in at_records:
+                    if r.get("id") == lead_id:
+                        f = r.get("fields", {})
+                        lead_info = {
+                            "company_name": f.get("Ten cty Khach") or "Khách hàng",
+                            "contact_name": f.get("Nguoi lien he") or "",
+                            "phone": f.get("So dien thoai") or "",
+                            "estimated_value": f.get("Gia tri uoc tinh") or 0,
+                            "demand": f.get("Nhu cau Du an") or ""
+                        }
+                        break
+            except Exception as e_at:
+                print("[Won fallback Airtable fetch error]:", e_at)
+        if lead_info:
+            try:
+                created_contract_code = auto_create_contract_for_won_lead(
+                    company_name=lead_info.get("company_name", "Khách hàng"),
+                    contact_name=lead_info.get("contact_name", ""),
+                    phone=lead_info.get("phone", ""),
+                    estimated_value=lead_info.get("estimated_value", 0),
+                    demand=lead_info.get("demand", "")
+                )
+                print(f"[Won] Auto contract created: {created_contract_code} for lead {lead_id}")
+            except Exception as e_c:
+                print("[Auto create contract trigger error]:", e_c)
+        else:
+            print(f"[Won] lead_info still empty after fallback for lead_id={lead_id}, skipping auto contract")
 
     # 4. Cập nhật Airtable trong background thread (không block 15s gây timeout trình duyệt khi người dùng reload)
     import threading
