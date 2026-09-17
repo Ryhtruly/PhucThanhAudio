@@ -176,6 +176,8 @@ export default function App() {
     address: '',
     contract_type: 'Cung cấp thiết bị âm thanh',
     total_amount: 0,
+    include_vat: true,
+    price_includes_vat: false,
     warranty_months: 24,
     send_zbs: true
   });
@@ -530,6 +532,39 @@ export default function App() {
     }
   };
 
+  // Tính toán minh bạch giá trị hợp đồng (Thuế VAT, Giá trọn gói hoặc Chưa thuế)
+  const getContractCalc = () => {
+    const raw = Number(contractForm.total_amount) || 0;
+    if (!contractForm.include_vat) {
+      return {
+        subtotal: raw,
+        vat: 0,
+        grandTotal: raw,
+        desc: 'Không xuất hóa đơn VAT (0%)'
+      };
+    }
+    if (contractForm.price_includes_vat) {
+      const grandTotal = raw;
+      const subtotal = Math.round(grandTotal / 1.1);
+      const vat = grandTotal - subtotal;
+      return {
+        subtotal,
+        vat,
+        grandTotal,
+        desc: 'Đã bao gồm VAT 10% (Giá trọn gói)'
+      };
+    }
+    const subtotal = raw;
+    const vat = Math.round(subtotal * 0.1);
+    const grandTotal = subtotal + vat;
+    return {
+      subtotal,
+      vat,
+      grandTotal,
+      desc: 'Giá trước thuế (+ 10% VAT)'
+    };
+  };
+
   // Submit Contract
   const handleCreateContract = async () => {
     if (!contractForm.mst || !contractForm.phone) {
@@ -549,7 +584,7 @@ export default function App() {
           id: data.contract_id,
           filename: `${data.contract_id}.docx`,
           company: contractForm.company_name || 'Khách hàng đối tác',
-          amount: contractForm.total_amount || 0
+          amount: data.grand_total || contractForm.total_amount || 0
         });
         showToast(`Tạo thành công HĐ ${data.contract_id}! Đang tải file...`);
         fetchInitialData();
@@ -2301,11 +2336,14 @@ export default function App() {
                   />
                 </div>
                 <div>
-                  <label style={{ fontSize: 11.5, color: '#64748B', fontWeight: 600 }}>Giá Trị Hợp Đồng (VNĐ)</label>
+                  <label style={{ fontSize: 11.5, color: '#64748B', fontWeight: 600 }}>
+                    {contractForm.price_includes_vat ? 'Giá Trọn Gói (Đã Gồm VAT)' : 'Giá Hàng Trước Thuế (VNĐ)'}
+                  </label>
                   <input
                     type="number"
                     className="input-field"
-                    value={contractForm.total_amount}
+                    placeholder="Ví dụ: 180000000"
+                    value={contractForm.total_amount || ''}
                     onChange={e => setContractForm({ ...contractForm, total_amount: parseInt(e.target.value) || 0 })}
                   />
                 </div>
@@ -2330,6 +2368,100 @@ export default function App() {
                     onChange={e => setContractForm({ ...contractForm, warranty_months: parseInt(e.target.value) || 24 })}
                   />
                 </div>
+              </div>
+
+              {/* TÙY CHỌN THUẾ VAT & BẢNG TÍNH MINH BẠCH THỜI GIAN THỰC (LIVE BREAKDOWN) */}
+              <div style={{
+                background: '#F8FAFC',
+                borderRadius: 10,
+                border: '1px solid #E2E8F0',
+                padding: '16px 20px',
+                marginBottom: 22
+              }}>
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 12, marginBottom: 12 }}>
+                  <label style={{ display: 'inline-flex', alignItems: 'center', gap: 8, cursor: 'pointer', fontSize: 13, fontWeight: 700, color: '#0F172A' }}>
+                    <input
+                      type="checkbox"
+                      checked={contractForm.include_vat}
+                      onChange={e => setContractForm({ ...contractForm, include_vat: e.target.checked })}
+                      style={{ width: 16, height: 16, accentColor: '#D31027' }}
+                    />
+                    Xuất Hóa Đơn Thuế GTGT (VAT 10%)
+                  </label>
+
+                  {contractForm.include_vat && (
+                    <div style={{ display: 'flex', gap: 8 }}>
+                      <button
+                        type="button"
+                        onClick={() => setContractForm({ ...contractForm, price_includes_vat: false })}
+                        style={{
+                          padding: '6px 14px',
+                          borderRadius: 6,
+                          fontSize: 12,
+                          fontWeight: 600,
+                          cursor: 'pointer',
+                          border: contractForm.price_includes_vat ? '1px solid #CBD5E1' : '1px solid #D31027',
+                          background: contractForm.price_includes_vat ? '#FFFFFF' : '#FEF2F2',
+                          color: contractForm.price_includes_vat ? '#475569' : '#D31027'
+                        }}
+                      >
+                        Giá chưa thuế (+ 10% VAT)
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setContractForm({ ...contractForm, price_includes_vat: true })}
+                        style={{
+                          padding: '6px 14px',
+                          borderRadius: 6,
+                          fontSize: 12,
+                          fontWeight: 600,
+                          cursor: 'pointer',
+                          border: contractForm.price_includes_vat ? '1px solid #16A34A' : '1px solid #CBD5E1',
+                          background: contractForm.price_includes_vat ? '#F0FDF4' : '#FFFFFF',
+                          color: contractForm.price_includes_vat ? '#166534' : '#475569'
+                        }}
+                      >
+                        Giá trọn gói (Đã gồm VAT)
+                      </button>
+                    </div>
+                  )}
+                </div>
+
+                {/* BẢNG TÍNH TIỀN MINH BẠCH */}
+                {(() => {
+                  const calc = getContractCalc();
+                  return (
+                    <div style={{
+                      display: 'grid',
+                      gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))',
+                      gap: 16,
+                      paddingTop: 12,
+                      borderTop: '1px dashed #CBD5E1'
+                    }}>
+                      <div>
+                        <span style={{ fontSize: 11, color: '#64748B', fontWeight: 600, textTransform: 'uppercase' }}>TIỀN HÀNG (TRƯỚC THUẾ)</span>
+                        <div style={{ fontSize: 15, fontWeight: 800, color: '#334155', marginTop: 2 }}>
+                          {calc.subtotal.toLocaleString('vi-VN')} đ
+                        </div>
+                      </div>
+                      <div>
+                        <span style={{ fontSize: 11, color: '#64748B', fontWeight: 600, textTransform: 'uppercase' }}>TIỀN THUẾ VAT (10%)</span>
+                        <div style={{ fontSize: 15, fontWeight: 800, color: calc.vat > 0 ? '#B45309' : '#64748B', marginTop: 2 }}>
+                          {calc.vat > 0 ? `+${calc.vat.toLocaleString('vi-VN')} đ` : '0 đ'}
+                        </div>
+                      </div>
+                      <div>
+                        <span style={{ fontSize: 11, color: '#D31027', fontWeight: 700, textTransform: 'uppercase' }}>TỔNG THANH TOÁN HỢP ĐỒNG</span>
+                        <div style={{ fontSize: 19, fontWeight: 900, color: '#D31027', marginTop: 2 }}>
+                          {calc.grandTotal.toLocaleString('vi-VN')} đ
+                        </div>
+                        <span style={{ fontSize: 11, color: '#64748B', fontStyle: 'italic', display: 'block', marginTop: 2 }}>
+                          ● {calc.desc}
+                        </span>
+                      </div>
+                    </div>
+                  );
+                })()}
               </div>
 
               <button
@@ -2387,7 +2519,10 @@ export default function App() {
                             {f['Loai HD'] || 'Cung cấp thiết bị'}
                           </td>
                           <td style={{ textAlign: 'right', fontWeight: 700, color: '#0F172A', whiteSpace: 'nowrap' }}>
-                            {(f['Gia tri HD'] || 0).toLocaleString('vi-VN')} đ
+                            <div style={{ fontSize: 13.5 }}>{(f['Gia tri HD'] || 0).toLocaleString('vi-VN')} đ</div>
+                            <span style={{ fontSize: 10, color: '#16A34A', fontWeight: 600, display: 'block', marginTop: 2 }}>
+                              ● Đã gồm VAT 10%
+                            </span>
                           </td>
                           <td style={{ textAlign: 'center', whiteSpace: 'nowrap' }}>
                             <span className="badge badge-red">{f['Trang thai'] || 'Cho ky'}</span>

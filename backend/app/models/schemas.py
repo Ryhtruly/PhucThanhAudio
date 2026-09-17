@@ -17,6 +17,8 @@ class ContractCreateRequest(BaseModel):
     phone: str
     contract_type: Optional[str] = "Cung cấp thiết bị"
     total_amount: Optional[int] = 0
+    include_vat: Optional[bool] = True
+    price_includes_vat: Optional[bool] = False
     items: Optional[List[QuoteItemSchema]] = []
     payment_terms: Optional[str] = "Thanh toán 50% khi ký HĐ, 50% sau khi bàn giao nghiệm thu."
     delivery_date: Optional[str] = "Trong vòng 05 ngày kể từ ngày ký"
@@ -24,6 +26,7 @@ class ContractCreateRequest(BaseModel):
     special_terms: Optional[str] = "Bảo hành 1 đổi 1 trong 30 ngày đầu tiên nếu có lỗi kỹ thuật."
     sales_rep: Optional[str] = "Nguyễn Văn Tuấn"
     send_zbs: Optional[bool] = False
+    company_name: Optional[str] = None
 
 class QuoteCreateRequest(BaseModel):
     company_name: str

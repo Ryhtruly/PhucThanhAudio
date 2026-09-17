@@ -19,7 +19,9 @@ def create_contract(
     special_terms: str = "Bảo hành 1 đổi 1 trong 30 ngày đầu tiên nếu có lỗi kỹ thuật từ nhà sản xuất.",
     sales_rep: str = "Nguyễn Văn Tuấn",
     send_zbs: bool = False,
-    company_name: Optional[str] = None
+    company_name: Optional[str] = None,
+    include_vat: bool = True,
+    price_includes_vat: bool = False
 ) -> Dict[str, Any]:
     # 1. Tra MST tự động từ VietQR API
     tax_info = lookup_tax_info(mst)
@@ -51,11 +53,23 @@ def create_contract(
             "total": total
         })
         
-    if total_amount and total_amount > 0:
-        subtotal = total_amount
-        
-    vat = int(round(subtotal * 0.1))
-    grand_total = subtotal + vat
+    input_val = total_amount if (total_amount and total_amount > 0) else subtotal
+
+    if not include_vat:
+        subtotal = input_val
+        vat = 0
+        grand_total = subtotal
+    elif price_includes_vat:
+        # Số tiền nhập vào đã bao gồm VAT trọn gói (không cộng thêm 10%)
+        grand_total = input_val
+        subtotal = int(round(grand_total / 1.1))
+        vat = grand_total - subtotal
+    else:
+        # Số tiền nhập vào là trước thuế, hệ thống tự tính 10% VAT
+        subtotal = input_val
+        vat = int(round(subtotal * 0.1))
+        grand_total = subtotal + vat
+
     words = number_to_vietnamese_words(grand_total)
     
     # 3. Sinh mã hợp đồng
@@ -192,6 +206,8 @@ def create_contract(
         "contract_id": contract_id,
         "company_name": company_name,
         "mst": mst,
+        "subtotal": subtotal,
+        "vat": vat,
         "grand_total": grand_total,
         "grand_total_words": words,
         "file_path": file_path,

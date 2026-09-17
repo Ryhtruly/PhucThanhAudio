@@ -45,7 +45,10 @@ def api_create_contract(req: ContractCreateRequest):
         warranty_months=req.warranty_months or 24,
         special_terms=req.special_terms,
         sales_rep=req.sales_rep,
-        send_zbs=req.send_zbs or False
+        send_zbs=req.send_zbs or False,
+        company_name=req.company_name,
+        include_vat=req.include_vat if req.include_vat is not None else True,
+        price_includes_vat=req.price_includes_vat or False
     )
     redis_client.delete("kpi_summary")
     return res

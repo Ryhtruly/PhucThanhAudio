@@ -24,6 +24,8 @@ class BotContractRequest(BaseModel):
     company_name: Optional[str] = ""
     contract_type: Optional[str] = "Cung cấp & Lắp đặt hệ thống âm thanh"
     total_amount: Optional[int] = 0
+    include_vat: Optional[bool] = True
+    price_includes_vat: Optional[bool] = False
     items: Optional[List[Dict[str, Any]]] = None
     special_terms: Optional[str] = ""
     sales_rep: Optional[str] = "Nguyễn Văn Tuấn"
@@ -105,7 +107,9 @@ def bot_nv1_create_contract(req: BotContractRequest):
         special_terms=req.special_terms or "",
         sales_rep=req.sales_rep or "Nguyễn Văn Tuấn",
         send_zbs=req.send_zbs if req.send_zbs is not None else True,
-        company_name=req.company_name or None
+        company_name=req.company_name or None,
+        include_vat=req.include_vat if req.include_vat is not None else True,
+        price_includes_vat=req.price_includes_vat or False
     )
     if not res.get("success"):
         return {
