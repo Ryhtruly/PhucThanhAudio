@@ -83,6 +83,40 @@ def api_list_contracts():
 
     return airtable_recs
 
+@router.patch("/contracts/{contract_id}/status")
+def api_update_contract_status(contract_id: str, payload: dict):
+    """Cập nhật trạng thái hợp đồng (ví dụ: Chờ ký -> Đã ký / Đang thực hiện) để ghi nhận Doanh thu thực đạt chuẩn kế toán."""
+    new_status = payload.get("status", "Da ky")
+    from app.core.database import SessionLocal
+    from app.models.db_models import Contract as DBContract
+    db = SessionLocal()
+    try:
+        c = db.query(DBContract).filter((DBContract.id == contract_id) | (DBContract.contract_code == contract_id)).first()
+        if c:
+            c.status = new_status
+            db.commit()
+            
+        # Tìm record Airtable để cập nhật nếu có
+        try:
+            target_airtable_id = contract_id
+            if not contract_id.startswith("rec"):
+                at_recs = airtable_client.list_records("Hop dong") or []
+                for r in at_recs:
+                    if r.get("fields", {}).get("Ma HD") == contract_id:
+                        target_airtable_id = r.get("id")
+                        break
+            if target_airtable_id and target_airtable_id.startswith("rec"):
+                airtable_client.update_record("Hop dong", target_airtable_id, {"Trang thai": new_status})
+        except Exception as ae:
+            print("[Airtable update contract status error]:", ae)
+            
+        redis_client.delete("kpi_summary")
+        return {"success": True, "contract_id": contract_id, "status": new_status}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+    finally:
+        db.close()
+
 # NV2: Tạo Báo giá ISO
 @router.post("/quotes")
 def api_create_quote(req: QuoteCreateRequest):

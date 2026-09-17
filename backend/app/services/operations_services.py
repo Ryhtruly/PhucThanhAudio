@@ -192,19 +192,37 @@ def get_kpi_summary() -> Dict[str, Any]:
         products = db.query(Product).all()
         solutions = db.query(SolutionPackage).all()
         
+        # Chuẩn mực kế toán (VAS):
+        # 1. Doanh thu thuần (TK 511) = Giá trị trước thuế (Subtotal) của các HĐ đã ký kết / đang thực hiện / hoàn thành
+        # 2. Thuế GTGT 10% (TK 3331) = Thu hộ nộp hộ, không hạch toán vào doanh thu
+        # 3. Hợp đồng 'Cho ky' = Dự thu chờ duyệt (Pipeline Forecast)
+        def get_subtotal(c):
+            if hasattr(c, "total_amount") and c.total_amount and c.total_amount > 0:
+                return c.total_amount
+            g = getattr(c, "grand_total", 0) or 0
+            return int(round(g / 1.1)) if g > 0 else 0
+
+        signed_statuses = ("Da ky", "Dang thuc hien", "Hoan thanh")
+        signed_contracts = [c for c in contracts if getattr(c, "status", "") in signed_statuses]
+        pending_contracts = [c for c in contracts if getattr(c, "status", "") not in signed_statuses]
+        
+        net_revenue_signed = sum(get_subtotal(c) for c in signed_contracts)
+        net_revenue_pending = sum(get_subtotal(c) for c in pending_contracts)
+        
         # Fallback to airtable if DB is completely empty
         if not contracts:
-            at_contracts = airtable_client.list_records("Hop dong")
-            total_revenue = sum(c.get("fields", {}).get("Gia tri HD", 0) for c in at_contracts)
+            at_contracts = airtable_client.list_records("Hop dong") or []
+            total_revenue = sum(int(round(c.get("fields", {}).get("Gia tri HD", 0) / 1.1)) for c in at_contracts)
             total_contracts = len(at_contracts)
         else:
-            total_revenue = sum(c.grand_total or c.total_amount for c in contracts)
+            # Doanh thu thực đạt từ hợp đồng đã ký / đang thực hiện, nếu mới tạo thì hiển thị net_revenue_signed hoặc tổng phát hành
+            total_revenue = net_revenue_signed if net_revenue_signed > 0 else net_revenue_pending
             total_contracts = len(contracts)
             
-        won_deals = len([l for l in leads if l.stage == "Won"]) or len([c for c in contracts if c.status in ("Da ky", "Dang thuc hien")])
+        won_deals = len([l for l in leads if l.stage == "Won"]) or len(signed_contracts)
         active_warranties = len([w for w in warranties if w.status in ("Tiep nhan", "Dang xu ly")])
         
-        # 1. Chuỗi số liệu xu hướng doanh thu từ bảng KPIMonthlyReport
+        # 1. Chuỗi số liệu xu hướng doanh thu thuần từ bảng KPIMonthlyReport
         monthly_trend = []
         if reports:
             for r in reports:
@@ -212,7 +230,7 @@ def get_kpi_summary() -> Dict[str, Any]:
                     "month": r.period_name,
                     "order": r.period_order,
                     "actual": r.revenue,
-                    "target": r.target_revenue,
+                    "target": r.target_revenue or 300000000,
                     "won_deals": r.won_deals_count,
                     "conv_rate": r.conversion_rate,
                     "notes": r.content_summary or ""
@@ -227,6 +245,7 @@ def get_kpi_summary() -> Dict[str, Any]:
                 {"month": "Tháng 8", "order": 8, "actual": 340000000, "target": 300000000, "won_deals": 6, "conv_rate": 35.0, "notes": ""},
                 {"month": "Tháng 9", "order": 9, "actual": 420000000, "target": 300000000, "won_deals": 8, "conv_rate": 38.0, "notes": ""}
             ]
+
         monthly_trend.sort(key=lambda x: x["order"])
         
         # 2. Cơ cấu nhóm giải pháp âm thanh tính toán thực tế từ Hợp Đồng và Gói Giải Pháp
@@ -247,7 +266,7 @@ def get_kpi_summary() -> Dict[str, Any]:
         pkg_revenue = {"karaoke_vip": 0, "hoi_truong": 0, "bar_club": 0, "pa_cafe": 0}
         pkg_keys = ["karaoke_vip", "hoi_truong", "bar_club", "pa_cafe"]
         for idx, c in enumerate(contracts):
-            val = c.grand_total or c.total_amount
+            val = get_subtotal(c)
             # Phân loại theo c.contract_type hoặc c.special_terms hoặc xoay vòng hợp đồng
             assigned = False
             for p_key in pkg_keys:
@@ -288,7 +307,7 @@ def get_kpi_summary() -> Dict[str, Any]:
         }
         channel_keys = list(channel_buckets.keys())
         for idx, c in enumerate(contracts):
-            c_val = c.grand_total or c.total_amount
+            c_val = get_subtotal(c)
             # Gán kênh dựa trên khách hàng hoặc phân bổ thực tế
             c_key = channel_keys[idx % len(channel_keys)]
             channel_buckets[c_key]["actual"] += c_val
@@ -315,6 +334,10 @@ def get_kpi_summary() -> Dict[str, Any]:
             
         return {
             "total_revenue": total_revenue,
+            "net_revenue_signed": net_revenue_signed,
+            "pending_revenue": net_revenue_pending,
+            "signed_contracts_count": len(signed_contracts),
+            "pending_contracts_count": len(pending_contracts),
             "total_contracts": total_contracts,
             "total_quotes": len(quotes),
             "total_leads": len(leads),

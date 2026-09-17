@@ -600,6 +600,26 @@ export default function App() {
     }
   };
 
+  // Cập nhật trạng thái Hợp đồng (Chờ ký -> Đã ký) để ghi nhận doanh thu thực đạt chuẩn kế toán
+  const handleUpdateContractStatus = async (contractId, newStatus) => {
+    try {
+      const res = await fetch(`${API_BASE}/contracts/${contractId}/status`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ status: newStatus })
+      });
+      const data = await res.json();
+      if (res.ok && data.success) {
+        showToast(`Đã chuyển HĐ ${contractId} thành "${newStatus === 'Da ky' ? 'Đã ký chính thức' : newStatus}"!`);
+        fetchInitialData();
+      } else {
+        showToast(data.detail || 'Lỗi cập nhật trạng thái hợp đồng', 'error');
+      }
+    } catch (e) {
+      showToast('Lỗi kết nối cập nhật hợp đồng', 'error');
+    }
+  };
+
   // Fetch Intake Solutions from Backend
   useEffect(() => {
     fetch(`${API_BASE}/intake/solutions`)
@@ -1211,14 +1231,26 @@ export default function App() {
 
               <div className="white-card" style={{ padding: '22px 24px', position: 'relative', overflow: 'hidden' }}>
                 <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: 3, background: '#D31027' }}></div>
-                <p style={{ color: '#64748B', fontSize: 11, fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.04em' }}>TỔNG DOANH THU HỢP ĐỒNG</p>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                  <p style={{ color: '#64748B', fontSize: 11, fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.04em' }}>DOANH THU THUẦN (TRƯỚC VAT)</p>
+                  <span style={{ fontSize: 10, background: '#DCFCE7', color: '#166534', padding: '2px 6px', borderRadius: 4, fontWeight: 700 }}>CHUẨN KẾ TOÁN</span>
+                </div>
                 <h3 style={{ fontSize: 22, fontWeight: 700, color: '#1E293B', marginTop: 6, letterSpacing: '-0.02em' }}>
                   {(kpiData?.total_revenue || 0).toLocaleString('vi-VN')} đ
                 </h3>
                 <p style={{ fontSize: 12, color: '#16A34A', marginTop: 8, fontWeight: 500, display: 'flex', alignItems: 'center', gap: 5 }}>
                   <span style={{ width: 6, height: 6, borderRadius: '50%', background: '#16A34A' }}></span>
-                  Từ {kpiData?.total_contracts || contracts.length} hợp đồng lưu trên Airtable
+                  {kpiData?.net_revenue_signed > 0 ? (
+                    <span>Đã ký/thực hiện: <strong>{(kpiData.net_revenue_signed).toLocaleString('vi-VN')} đ</strong> ({kpiData.signed_contracts_count || 0} HĐ)</span>
+                  ) : (
+                    <span>Tổng phát hành: {kpiData?.total_contracts || contracts.length} hợp đồng</span>
+                  )}
                 </p>
+                {kpiData?.pending_revenue > 0 && kpiData?.net_revenue_signed > 0 && (
+                  <p style={{ fontSize: 11, color: '#64748B', margin: '4px 0 0 11px' }}>
+                    ⏳ Dự thu chờ ký: <strong>{(kpiData.pending_revenue).toLocaleString('vi-VN')} đ</strong> ({kpiData.pending_contracts_count || 0} HĐ)
+                  </p>
+                )}
               </div>
 
               <div className="white-card" style={{ padding: '22px 24px', position: 'relative', overflow: 'hidden' }}>
@@ -1363,7 +1395,7 @@ export default function App() {
                           </span>
                         </div>
                         <p style={{ fontSize: 12, color: '#64748B', margin: '4px 0 0 0' }}>
-                          Số liệu thực tế từ Hợp đồng & Báo cáo kết nối Database thời gian thực
+                          Doanh thu thuần trước thuế VAT (Chuẩn kế toán VAS) • Tự động kết nối Database thời gian thực
                         </p>
                       </div>
                       <div style={{ display: 'flex', alignItems: 'center', gap: 12, fontSize: 11.5, fontWeight: 700, flexShrink: 0 }}>
@@ -2525,16 +2557,34 @@ export default function App() {
                             </span>
                           </td>
                           <td style={{ textAlign: 'center', whiteSpace: 'nowrap' }}>
-                            <span className="badge badge-red">{f['Trang thai'] || 'Cho ky'}</span>
+                            <span className={
+                              (f['Trang thai'] === 'Da ky' || f['Trang thai'] === 'Dang thuc hien' || f['Trang thai'] === 'Hoan thanh')
+                                ? 'badge badge-green'
+                                : 'badge badge-gold'
+                            }>
+                              {f['Trang thai'] === 'Da ky' ? 'Đã ký' : (f['Trang thai'] || 'Cho ky')}
+                            </span>
                           </td>
                           <td style={{ textAlign: 'center', whiteSpace: 'nowrap' }}>
-                            <button
-                              onClick={() => triggerDownload(`/api/v1/contracts/${maHd}/${maHd}.docx`, `${maHd}.docx`)}
-                              className="btn-secondary"
-                              style={{ padding: '6px 14px', fontSize: 12, display: 'inline-flex', alignItems: 'center', gap: 6 }}
-                            >
-                              📥 Tải .docx
-                            </button>
+                            <div style={{ display: 'inline-flex', gap: 6, alignItems: 'center' }}>
+                              <button
+                                onClick={() => triggerDownload(`/api/v1/contracts/${maHd}/${maHd}.docx`, `${maHd}.docx`)}
+                                className="btn-secondary"
+                                style={{ padding: '6px 12px', fontSize: 12, display: 'inline-flex', alignItems: 'center', gap: 4 }}
+                              >
+                                📥 .docx
+                              </button>
+                              {(f['Trang thai'] || 'Cho ky') === 'Cho ky' && (
+                                <button
+                                  onClick={() => handleUpdateContractStatus(maHd, 'Da ky')}
+                                  className="btn-primary"
+                                  style={{ padding: '6px 12px', fontSize: 12, display: 'inline-flex', alignItems: 'center', gap: 4, background: '#16A34A', borderColor: '#16A34A' }}
+                                  title="Xác nhận khách hàng đã ký để ghi nhận doanh thu thực tế"
+                                >
+                                  ✍️ Ký Duyệt
+                                </button>
+                              )}
+                            </div>
                           </td>
                         </tr>
                       );
