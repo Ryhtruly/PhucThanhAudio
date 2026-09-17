@@ -76,7 +76,7 @@ class BotIntakeRequest(BaseModel):
     preferred_brand: Optional[str] = "Chính hãng (SR Italy, LSS, Verity Audio)"
     estimated_budget: Optional[int] = 0
     notes: Optional[str] = ""
-    source: Optional[str] = "AI Bot Intake"
+    source: Optional[str] = "Website Tiếp Nhận"
     send_zbs: Optional[bool] = False
 
 class BotProductAddRequest(BaseModel):
@@ -546,7 +546,7 @@ def bot_nv8_create_intake(req: BotIntakeRequest):
             contact_name=contact,
             phone=phone,
             email=req.email or "",
-            source=req.source or "AI Bot Intake",
+            source=req.source or "Website Tiếp Nhận",
             demand=demand_summary,
             stage="New",
             lead_score=lead_score,

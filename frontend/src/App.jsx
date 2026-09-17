@@ -486,17 +486,17 @@ export default function App() {
     ));
 
     const stageNames = {
-      'New': 'Lead Mới',
-      'Qualified': 'Khảo Sát & Demo',
-      'Dam phan': 'Đàm Phán / Báo Giá',
-      'Won': 'Ký HĐ Thành Công',
+      'New': 'Tiếp Nhận Ban Đầu',
+      'Qualified': 'Khảo Sát Hiện Trạng',
+      'Dam phan': 'Đàm Phán & Báo Giá',
+      'Won': 'Ký Kết Hợp Đồng',
       'Lost': 'Thất Bại / Hủy'
     };
 
     const compName = lead.fields?.['Ten cty Khach'] || 'Khách hàng';
     showToast(`Đã chuyển "${compName}" sang cột "${stageNames[targetStage] || targetStage}"!`);
 
-    // Call Backend API to sync Airtable
+    // Call Backend API
     try {
       const res = await fetch(`${API_BASE}/leads/${leadId}/stage`, {
         method: 'PATCH',
@@ -505,7 +505,7 @@ export default function App() {
       });
       const data = await res.json();
       if (!res.ok || !data.success) {
-        showToast('Lỗi cập nhật lên Airtable', 'error');
+        showToast('Lỗi cập nhật trạng thái cơ hội', 'error');
         fetchInitialData();
       }
     } catch (err) {
@@ -825,12 +825,12 @@ export default function App() {
       });
       const data = await res.json();
       if (data.success) {
-        showToast(`Đã bắn tin Zalo ZBS tới ${zbsForm.phone}!`);
+        showToast(`Đã gửi thông báo Zalo ZNS tới ${zbsForm.phone}!`);
       } else {
-        showToast(data.error || 'Không gửi được tin ZBS', 'error');
+        showToast(data.error || 'Không gửi được thông báo Zalo', 'error');
       }
     } catch (e) {
-      showToast('Lỗi kết nối gửi ZBS', 'error');
+      showToast('Lỗi kết nối dịch vụ gửi tin Zalo', 'error');
     } finally {
       setLoading(false);
     }
@@ -934,11 +934,9 @@ export default function App() {
                 padding: '10px 14px',
                 borderRadius: 8,
                 fontSize: 12.5,
-                display: 'flex',
-                alignItems: 'center',
-                gap: 8
+                fontWeight: 600
               }}>
-                <span>⚠️</span> {loginError}
+                {loginError}
               </div>
             )}
 
@@ -1147,9 +1145,9 @@ export default function App() {
               onClick={fetchInitialData}
               className="btn-secondary"
               style={{ padding: '7px 16px', fontSize: 13, fontWeight: 700 }}
-              title="Đồng bộ dữ liệu thời gian thực từ Airtable & Redis"
+              title="Cập nhật dữ liệu từ hệ thống"
             >
-              {loading ? 'Đang đồng bộ...' : 'Đồng bộ dữ liệu'}
+              {loading ? 'Đang cập nhật...' : 'Cập nhật dữ liệu'}
             </button>
 
             {/* User Profile & Logout */}
@@ -1265,7 +1263,7 @@ export default function App() {
               </div>
               <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
                 <span className="badge badge-green" style={{ fontSize: 11.5, padding: '5px 11px' }}>
-                  ● Dữ Liệu Đồng Bộ ({kpiData?.airtable_reports_count || 6} kỳ báo cáo)
+                  ● Dữ Liệu Chuẩn Hóa ({kpiData?.airtable_reports_count || 6} kỳ báo cáo)
                 </span>
                 <span className="badge badge-gold" style={{ fontSize: 11.5, padding: '5px 11px' }}>
                   Cập nhật: {kpiData?.last_updated || 'Vừa xong'}
@@ -1280,7 +1278,7 @@ export default function App() {
                 <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: 3, background: '#D31027' }}></div>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                   <p style={{ color: '#64748B', fontSize: 11, fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.04em' }}>DOANH THU THUẦN (TRƯỚC VAT)</p>
-                  <span style={{ fontSize: 10, background: '#DCFCE7', color: '#166534', padding: '2px 6px', borderRadius: 4, fontWeight: 700 }}>CHUẨN KẾ TOÁN</span>
+                  <span style={{ fontSize: 10, background: '#F1F5F9', color: '#475569', padding: '2px 6px', borderRadius: 4, fontWeight: 600 }}>DOANH THU THỰC</span>
                 </div>
                 <h3 style={{ fontSize: 22, fontWeight: 700, color: '#1E293B', marginTop: 6, letterSpacing: '-0.02em' }}>
                   {(kpiData?.total_revenue || 0).toLocaleString('vi-VN')} đ
@@ -1439,7 +1437,7 @@ export default function App() {
                           </span>
                         </div>
                         <p style={{ fontSize: 12, color: '#64748B', margin: '4px 0 0 0' }}>
-                          Doanh thu thuần trước thuế VAT (Chuẩn kế toán VAS) • Tự động kết nối Database thời gian thực
+                          Doanh thu thuần trước thuế VAT theo các kỳ kinh doanh
                         </p>
                       </div>
                       <div style={{ display: 'flex', alignItems: 'center', gap: 12, fontSize: 11.5, fontWeight: 700, flexShrink: 0 }}>
@@ -1565,7 +1563,7 @@ export default function App() {
                         Cơ Cấu Doanh Số Theo Nhóm Giải Pháp
                       </h4>
                       <p style={{ fontSize: 12, color: '#64748B', margin: '4px 0 0 0' }}>
-                        Tỷ trọng doanh số tính từ Hợp đồng thực tế trong Database
+                        Tỷ trọng doanh số theo từng nhóm giải pháp âm thanh
                       </p>
                     </div>
 
@@ -1894,27 +1892,27 @@ export default function App() {
             {/* Executive Status & Workflow Shortcuts (Clean, No Bloat) */}
             <div style={{ display: 'grid', gridTemplateColumns: '1.4fr 1fr', gap: 24 }}>
 
-              {/* System & Automation Infrastructure */}
+              {/* System Operations & Services */}
               <div className="white-card" style={{ padding: '22px 24px' }}>
                 <h4 style={{ fontSize: 15, fontWeight: 700, color: '#0F172A', marginBottom: 14, display: 'flex', alignItems: 'center', gap: 8 }}>
                   <span style={{ width: 8, height: 8, borderRadius: '50%', background: '#10B981' }}></span>
-                  Trạng Thái Hệ Thống & Dữ Liệu
+                  Trạng Thái Vận Hành Hệ Thống
                 </h4>
                 <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 14 }}>
                   <div style={{ padding: '14px 16px', background: '#F8FAFC', borderRadius: 10, border: '1px solid #E2E8F0' }}>
                     <div style={{ fontSize: 11, color: '#64748B', fontWeight: 600, textTransform: 'uppercase' }}>Cơ Sở Dữ Liệu</div>
                     <div style={{ fontSize: 13, fontWeight: 700, color: '#0F172A', marginTop: 4 }}>Dữ Liệu Doanh Nghiệp</div>
-                    <div style={{ fontSize: 11.5, color: '#16A34A', marginTop: 4, fontWeight: 500 }}>● Đã đồng bộ trực tuyến</div>
+                    <div style={{ fontSize: 11.5, color: '#16A34A', marginTop: 4, fontWeight: 500 }}>● Trực tuyến ổn định</div>
                   </div>
                   <div style={{ padding: '14px 16px', background: '#F8FAFC', borderRadius: 10, border: '1px solid #E2E8F0' }}>
-                    <div style={{ fontSize: 11, color: '#64748B', fontWeight: 600, textTransform: 'uppercase' }}>Bộ Nhớ Đệm</div>
-                    <div style={{ fontSize: 13, fontWeight: 700, color: '#0F172A', marginTop: 4 }}>Redis Cache</div>
-                    <div style={{ fontSize: 11.5, color: '#0284C7', marginTop: 4, fontWeight: 500 }}>● Phản hồi tức thì (&lt;15ms)</div>
+                    <div style={{ fontSize: 11, color: '#64748B', fontWeight: 600, textTransform: 'uppercase' }}>Tốc Độ Truy Xuất</div>
+                    <div style={{ fontSize: 13, fontWeight: 700, color: '#0F172A', marginTop: 4 }}>Tối Ưu Tức Thì</div>
+                    <div style={{ fontSize: 11.5, color: '#0284C7', marginTop: 4, fontWeight: 500 }}>● Tải trang tức thời</div>
                   </div>
                   <div style={{ padding: '14px 16px', background: '#F8FAFC', borderRadius: 10, border: '1px solid #E2E8F0' }}>
-                    <div style={{ fontSize: 11, color: '#64748B', fontWeight: 600, textTransform: 'uppercase' }}>Dịch Vụ Tích Hợp</div>
-                    <div style={{ fontSize: 13, fontWeight: 700, color: '#0F172A', marginTop: 4 }}>VietQR + Zalo ZNS</div>
-                    <div style={{ fontSize: 11.5, color: '#16A34A', marginTop: 4, fontWeight: 500 }}>● Sẵn sàng hoạt động</div>
+                    <div style={{ fontSize: 11, color: '#64748B', fontWeight: 600, textTransform: 'uppercase' }}>Cổng Tích Hợp</div>
+                    <div style={{ fontSize: 13, fontWeight: 700, color: '#0F172A', marginTop: 4 }}>VietQR + Zalo OA</div>
+                    <div style={{ fontSize: 11.5, color: '#16A34A', marginTop: 4, fontWeight: 500 }}>● Sẵn sàng kết nối</div>
                   </div>
                 </div>
               </div>
@@ -2006,7 +2004,7 @@ export default function App() {
                         Danh Mục Thiết Bị Âm Thanh
                       </h4>
                       <span style={{ fontSize: 11.5, color: '#64748B' }}>
-                        {products.length} thiết bị có sẵn trên hệ thống & Airtable
+                        {products.length} thiết bị trong danh mục niêm yết
                       </span>
                     </div>
                     <button
@@ -2022,7 +2020,7 @@ export default function App() {
                   <div style={{ marginBottom: 12 }}>
                     <input
                       type="text"
-                      placeholder="🔍 Tìm thiết bị theo tên, thương hiệu (SR, Crown, JBL...), mã..."
+                      placeholder="Tìm thiết bị theo tên, thương hiệu (SR, Crown, JBL...), mã..."
                       className="input-field"
                       style={{ padding: '8px 12px', fontSize: 12.5 }}
                       value={productSearch}
@@ -2152,7 +2150,7 @@ export default function App() {
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 18, borderBottom: '1px solid #E2E8F0', paddingBottom: 12 }}>
                     <div>
                       <h3 style={{ fontSize: 18, fontWeight: 800, color: '#0F172A', margin: 0 }}>Thêm Thiết Bị Mới Vào Bảng Giá</h3>
-                      <p style={{ fontSize: 12, color: '#64748B', margin: '4px 0 0 0' }}>Lưu vào CSDL nội bộ và đồng bộ lên bảng giá Airtable</p>
+                      <p style={{ fontSize: 12, color: '#64748B', margin: '4px 0 0 0' }}>Thêm thiết bị mới vào danh mục sản phẩm</p>
                     </div>
                     <button
                       type="button"
@@ -2397,7 +2395,7 @@ export default function App() {
                   <label style={{ fontSize: 11.5, color: '#64748B', fontWeight: 600 }}>Tên Doanh Nghiệp (Bên Mua)</label>
                   <input
                     className="input-field"
-                    placeholder="Tự động điền đầy đủ tên công ty sau khi tra MST"
+                    placeholder="Tên doanh nghiệp / Đơn vị mua hàng"
                     value={contractForm.company_name}
                     onChange={e => setContractForm({ ...contractForm, company_name: e.target.value })}
                   />
@@ -2406,7 +2404,7 @@ export default function App() {
                   <label style={{ fontSize: 11.5, color: '#64748B', fontWeight: 600 }}>Địa Chỉ Đăng Ký Trụ Sở</label>
                   <input
                     className="input-field"
-                    placeholder="Tự động điền địa chỉ pháp lý theo cơ quan thuế"
+                    placeholder="Địa chỉ trụ sở theo đăng ký kinh doanh"
                     value={contractForm.address}
                     onChange={e => setContractForm({ ...contractForm, address: e.target.value })}
                   />
@@ -2557,7 +2555,7 @@ export default function App() {
                 style={{ width: '100%', padding: '12px', fontSize: 14, justifyContent: 'center' }}
                 disabled={loading}
               >
-                {loading ? 'Đang tạo hợp đồng & sinh file Word...' : 'Tạo Hợp Đồng Tự Động & Tải File Word (.docx)'}
+                {loading ? 'Đang khởi tạo hợp đồng & kết xuất tài liệu...' : 'Tạo Hợp Đồng & Tải File (.docx)'}
               </button>
             </div>
 
@@ -2660,11 +2658,11 @@ export default function App() {
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: 16, marginBottom: 16 }}>
                 <div>
                   <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-                    <h2 style={{ fontSize: 24, fontWeight: 800, color: '#0F172A' }}>Pipeline Bán Hàng — CRM Kanban</h2>
-                    <span className="badge badge-red" style={{ fontSize: 11 }}>DRAG & DROP REALTIME</span>
+                    <h2 style={{ fontSize: 24, fontWeight: 800, color: '#0F172A' }}>Khách Hàng & Cơ Hội Bán Hàng</h2>
+                    <span className="badge badge-gold" style={{ fontSize: 11 }}>TIẾN TRÌNH 5 GIAI ĐOẠN</span>
                   </div>
                   <p style={{ color: '#64748B', fontSize: 13, marginTop: 4 }}>
-                    Quản lý hành trình từ Lead mới đến khi Chốt hợp đồng (Won), tự động đồng bộ thời gian thực lên Airtable
+                    Quản lý tiến độ bán hàng từ tiếp nhận cơ hội đến khi ký kết hợp đồng
                   </p>
                 </div>
               </div>
@@ -2697,7 +2695,7 @@ export default function App() {
                     onClick={fetchInitialData}
                     className="btn-secondary"
                     style={{ padding: '7px 12px', fontSize: 12.5 }}
-                    title="Làm mới danh sách Lead từ Airtable"
+                    title="Làm mới danh sách khách hàng"
                   >
                     Làm Mới
                   </button>
@@ -2750,7 +2748,7 @@ export default function App() {
                     className="btn-primary"
                     style={{ padding: '7px 16px', fontSize: 13 }}
                   >
-                    + Tạo Lead Mới
+                    + Thêm Cơ Hội Mới
                   </button>
                 </div>
               </div>
@@ -2831,7 +2829,7 @@ export default function App() {
             }}>
               <div className="white-card" style={{ padding: '12px 18px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                 <div>
-                  <div style={{ fontSize: 11, color: '#64748B', fontWeight: 600, textTransform: 'uppercase' }}>Tổng Số Deal</div>
+                  <div style={{ fontSize: 11, color: '#64748B', fontWeight: 600, textTransform: 'uppercase' }}>Tổng Số Cơ Hội</div>
                   <div style={{ fontSize: 20, fontWeight: 900, color: '#0F172A' }}>{leads.length} Khách hàng</div>
                 </div>
               </div>
@@ -2845,7 +2843,7 @@ export default function App() {
               </div>
               <div className="white-card" style={{ padding: '12px 18px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                 <div>
-                  <div style={{ fontSize: 11, color: '#64748B', fontWeight: 600, textTransform: 'uppercase' }}>Deal Đã Chốt (Won)</div>
+                  <div style={{ fontSize: 11, color: '#64748B', fontWeight: 600, textTransform: 'uppercase' }}>Hợp Đồng Đã Ký</div>
                   <div style={{ fontSize: 20, fontWeight: 900, color: '#16A34A' }}>
                     {leads.filter(l => (l.fields?.Stage || 'New') === 'Won').reduce((sum, l) => sum + (l.fields?.['Gia tri uoc tinh'] || 0), 0).toLocaleString('vi-VN')} đ
                   </div>
@@ -2870,7 +2868,7 @@ export default function App() {
               }}>
                 <div className="white-card" style={{ width: '100%', maxWidth: 540, padding: 26, boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.1)' }}>
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 18, borderBottom: '1px solid #E2E8F0', pb: 12 }}>
-                    <h3 style={{ fontSize: 18, fontWeight: 800, color: '#0F172A' }}>Thêm Khách Hàng / Lead Mới</h3>
+                    <h3 style={{ fontSize: 18, fontWeight: 800, color: '#0F172A' }}>Thêm Cơ Hội Bán Hàng Mới</h3>
                     <button
                       onClick={() => setShowNewLeadModal(false)}
                       style={{ background: 'transparent', border: 'none', fontSize: 20, cursor: 'pointer', color: '#64748B' }}
@@ -2959,7 +2957,7 @@ export default function App() {
                       className="btn-primary"
                       disabled={loading}
                     >
-                      {loading ? 'Đang lưu...' : 'Lưu Lead Lên Airtable'}
+                      {loading ? 'Đang lưu...' : 'Lưu Thông Tin Cơ Hội'}
                     </button>
                   </div>
                 </div>
@@ -2978,14 +2976,14 @@ export default function App() {
               {[
                 {
                   id: 'New',
-                  title: 'Lead Mới Tiếp Nhận',
+                  title: 'Tiếp Nhận Ban Đầu',
                   accentColor: '#0284C7',
                   badgeBg: '#E0F2FE',
                   badgeColor: '#0369A1'
                 },
                 {
                   id: 'Qualified',
-                  title: 'Khảo Sát & Demo',
+                  title: 'Khảo Sát Hiện Trạng',
                   accentColor: '#D97706',
                   badgeBg: '#FEF3C7',
                   badgeColor: '#B45309'
@@ -2999,14 +2997,14 @@ export default function App() {
                 },
                 {
                   id: 'Won',
-                  title: 'Ký Hợp Đồng (Won)',
+                  title: 'Ký Kết Hợp Đồng',
                   accentColor: '#16A34A',
                   badgeBg: '#DCFCE7',
                   badgeColor: '#15803D'
                 },
                 {
                   id: 'Lost',
-                  title: 'Thất Bại / Đã Hủy',
+                  title: 'Thất Bại / Hủy Bỏ',
                   accentColor: '#64748B',
                   badgeBg: '#F1F5F9',
                   badgeColor: '#475569'
@@ -3126,7 +3124,7 @@ export default function App() {
                                   borderRadius: 4,
                                   whiteSpace: 'nowrap'
                                 }}>
-                                  Score: {score}
+                                  Ưu tiên: {score >= 85 ? 'Cao' : 'Chuẩn'}
                                 </span>
                               </div>
 
@@ -3255,8 +3253,8 @@ export default function App() {
                 <div style={{ fontSize: 26, fontWeight: 900, color: '#D31027', marginTop: 8 }}>
                   {inventoryData.low_stock_count || 0} Thiết Bị Sắp Hết
                 </div>
-                <p style={{ fontSize: 12, color: '#B45309', fontWeight: 700, marginTop: 4 }}>
-                  ⚠️ Cần gửi lệnh đặt hàng Nhà phân phối ngay
+                <p style={{ fontSize: 12, color: '#B45309', fontWeight: 600, marginTop: 4 }}>
+                  ● Cần lập kế hoạch bổ sung hàng dự trữ
                 </p>
               </div>
             </div>
