@@ -451,29 +451,66 @@ def api_kpi_summary():
 
 @router.patch("/leads/{lead_id}/stage")
 def api_update_lead_stage(lead_id: str, req: LeadStageUpdateRequest):
-    # 1. Cập nhật SQLite nội bộ trước
+    target_stage = req.stage
+
+    # 1. Cập nhật SQLite nội bộ trước (< 2ms) đảm bảo lưu bền vững
     try:
         from app.core.database import SessionLocal
         from app.models.db_models import Lead as DBLead
         db = SessionLocal()
         lead = db.query(DBLead).filter((DBLead.id == lead_id) | (DBLead.phone == lead_id)).first()
         if lead:
-            lead.stage = req.stage
+            lead.stage = target_stage
             db.commit()
+        else:
+            # Nếu lead chưa có trong SQLite (tạo từ nguồn khác/Airtable), tự động import vào SQLite
+            try:
+                at_lead = airtable_client.list_records("Lead & Pipeline", filter_formula=f"RECORD_ID() = '{lead_id}'")
+                if at_lead:
+                    f = at_lead[0].get("fields", {})
+                    new_db_lead = DBLead(
+                        id=lead_id,
+                        company_name=f.get("Ten cty Khach") or "Khách hàng",
+                        contact_name=f.get("Nguoi lien he") or "",
+                        phone=f.get("So dien thoai") or "",
+                        email=f.get("Email") or "",
+                        source=f.get("Nguon lead") or "Web form",
+                        demand=f.get("Nhu cau Du an") or "",
+                        stage=target_stage,
+                        lead_score=f.get("Lead Score") or 60,
+                        estimated_value=f.get("Gia tri uoc tinh") or 0
+                    )
+                    db.merge(new_db_lead)
+                    db.commit()
+            except Exception as e_sync:
+                print("[Sync missing lead into SQLite]:", e_sync)
         db.close()
     except Exception as e:
         print("[DB update lead stage error]:", e)
 
-    # 2. Cập nhật Airtable
-    try:
-        airtable_client.update_record("Lead & Pipeline", lead_id, {"Stage": req.stage})
-    except Exception as e:
-        print("[Airtable update lead stage error]:", e)
-
-    # 3. Xóa cache tức thì
+    # 2. Xóa cache tức thì trong Redis và Memory để GET /leads sau khi reload thấy ngay trạng thái mới
     redis_client.delete("leads_list")
     redis_client.delete("kpi_summary")
-    return {"success": True, "lead_id": lead_id, "stage": req.stage}
+
+    # 3. Cập nhật Airtable trong background thread (không block 15s gây timeout trình duyệt khi người dùng reload)
+    import threading
+    def sync_to_airtable(lid: str, stage_val: str):
+        try:
+            target_aid = lid
+            if not lid.startswith("rec"):
+                at_recs = airtable_client.list_records("Lead & Pipeline") or []
+                for r in at_recs:
+                    if r.get("fields", {}).get("So dien thoai") == lid or r.get("fields", {}).get("Ten cty Khach") == lid:
+                        target_aid = r.get("id")
+                        break
+            if target_aid and target_aid.startswith("rec"):
+                airtable_client.update_record("Lead & Pipeline", target_aid, {"Stage": stage_val})
+        except Exception as ae:
+            print("[Airtable background update lead stage error]:", ae)
+
+    threading.Thread(target=sync_to_airtable, args=(lead_id, target_stage), daemon=True).start()
+
+    return {"success": True, "lead_id": lead_id, "stage": target_stage}
 
 
 # ==========================================

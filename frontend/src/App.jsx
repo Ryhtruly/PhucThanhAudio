@@ -478,12 +478,16 @@ export default function App() {
     const currentStage = lead.fields?.Stage || 'New';
     if (currentStage === targetStage) return;
 
-    // Optimistic UI Update
-    setLeads(prev => prev.map(item =>
+    // Optimistic UI Update & lưu ngay vào localStorage để không bị giật lại khi reload
+    const updatedLeads = leads.map(item =>
       item.id === leadId
         ? { ...item, fields: { ...item.fields, Stage: targetStage } }
         : item
-    ));
+    );
+    setLeads(updatedLeads);
+    try {
+      localStorage.setItem('pt_leads', JSON.stringify(updatedLeads));
+    } catch {}
 
     const stageNames = {
       'New': 'Tiếp Nhận Ban Đầu',

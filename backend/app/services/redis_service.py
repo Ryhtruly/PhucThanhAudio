@@ -59,6 +59,7 @@ class RedisService:
         return True
 
     def delete(self, pattern_or_key: str):
+        self._fallback_cache.pop(pattern_or_key, None)
         if self.is_connected and self.client:
             try:
                 if "*" in pattern_or_key:
@@ -69,8 +70,6 @@ class RedisService:
                     self.client.delete(pattern_or_key)
             except Exception as e:
                 print(f"[Redis Delete Error] {e}")
-        else:
-            self._fallback_cache.pop(pattern_or_key, None)
 
     def get_info(self) -> dict:
         if self.is_connected and self.client:

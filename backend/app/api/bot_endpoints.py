@@ -253,6 +253,10 @@ def bot_nv3_update_deal(deal_id: str, req: BotDealUpdateRequest):
     finally:
         db.close()
 
+    # Xóa cache Redis tức thì
+    redis_client.delete("leads_list")
+    redis_client.delete("kpi_summary")
+
     stage_names = {
         "New": "Lead Mới",
         "Qualified": "Khảo Sát & Demo",
