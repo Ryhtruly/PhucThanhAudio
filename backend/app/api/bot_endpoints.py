@@ -39,6 +39,9 @@ class BotQuoteRequest(BaseModel):
     project_name: Optional[str] = "Gói giải pháp âm thanh chuyên nghiệp"
     items: List[Dict[str, Any]] # [{"name": "...", "qty": 2, "price": 45000000, "brand": "SR Italy"}]
     include_vat: Optional[bool] = True
+    discount: Optional[int] = 0
+    discount_percent: Optional[float] = 0
+    chiet_khau: Optional[int] = 0
     sales_rep: Optional[str] = "Nguyễn Văn Tuấn"
     send_zbs: Optional[bool] = True
 
@@ -154,6 +157,9 @@ def bot_nv2_create_quote(req: BotQuoteRequest):
         project_name=req.project_name or "Trang bị hệ thống âm thanh",
         items=req.items,
         include_vat=req.include_vat if req.include_vat is not None else True,
+        discount=req.discount or 0,
+        discount_percent=req.discount_percent or 0,
+        chiet_khau=req.chiet_khau or 0,
         sales_rep=req.sales_rep or "Nguyễn Văn Tuấn",
         send_zbs=req.send_zbs if req.send_zbs is not None else True
     )
@@ -169,14 +175,23 @@ def bot_nv2_create_quote(req: BotQuoteRequest):
     download_url = f"/api/v1/quotes/{qid}/{qid}.docx"
 
     blocks = [
-        f"📄 **Đã xuất Báo Giá ISO thành công!**",
+        f"📄 **Đã xuất Báo Giá thành công!**",
         f"• **Mã Báo Giá:** `{qid}`",
         f"• **Dự án:** {req.project_name}",
-        f"• **Khách hàng:** {req.company_name} ({req.contact_name} - {req.phone})",
-        f"• **Tổng cộng:** `{grand_total:,.0f} đ`",
-        f"• **Tải file Word .docx:** [Tải Báo Giá]({download_url})",
-        f"• **Thông báo ZBS:** {'Đã kích hoạt' if req.send_zbs else 'Tắt'}"
+        f"• **Khách hàng:** {req.company_name} ({req.contact_name} - `{req.phone}`)"
     ]
+    if res.get("discount", 0) > 0:
+        blocks.append(f"• **Cộng tiền hàng:** `{res.get('items_total', 0):,.0f} đ`")
+        blocks.append(f"• **Chiết khấu:** `-{res.get('discount', 0):,.0f} đ` ({res.get('discount_percent', 0)}%)")
+        blocks.append(f"• **Tổng trước VAT:** `{res.get('subtotal', 0):,.0f} đ`")
+    else:
+        blocks.append(f"• **Tổng trước VAT:** `{res.get('subtotal', 0):,.0f} đ`")
+
+    blocks.append(f"• **Thuế VAT (10%):** `{res.get('vat', 0):,.0f} đ`")
+    blocks.append(f"• **Tổng cộng thanh toán:** `{grand_total:,.0f} đ`")
+    blocks.append(f"• **Bằng chữ:** *{res.get('grand_total_words', '')}*")
+    blocks.append(f"• **Tải file Word .docx:** [Tải Báo Giá]({download_url})")
+    blocks.append(f"• **Thông báo Zalo ZNS:** {'Đã kích hoạt' if req.send_zbs else 'Tắt'}")
 
     return {
         "action": "ANSWER",
@@ -272,13 +287,18 @@ def bot_nv4_send_zbs(req: BotZBSSendRequest):
         template_id=req.template_id,
         template_data=req.template_data
     )
-    msg = res.get("message", "Đã xếp hàng gửi tin")
+    is_success = res.get("success", False)
+    status_msg = res.get("message") or ("Gửi thành công" if is_success else res.get("error", "Thất bại"))
+    
     blocks = [
         f"💬 **Thông báo Zalo ZBS WIFIM:**",
         f"• **Người nhận:** `{req.phone}`",
         f"• **Template ID:** `{req.template_id}`",
-        f"• **Trạng thái:** {msg}"
+        f"• **Trạng thái:** {'✅ ' + status_msg if is_success else '⚠️ ' + status_msg}"
     ]
+    if res.get("is_token_expired") or res.get("error_code") == -216 or "-216" in str(res):
+        blocks.append("💡 **Hướng dẫn khắc phục:** Zalo OA Access Token trong file `.env` đã hết hạn (Mã lỗi -216). Vui lòng vào *Zalo API Explorer* để lấy Access Token mới và cập nhật vào biến `ZBS_API_KEY` (hoặc `ZALO_ACCESS_TOKEN`) trên server.")
+
     return {
         "action": "ANSWER",
         "blocks": blocks,

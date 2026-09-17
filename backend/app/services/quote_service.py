@@ -14,6 +14,9 @@ def create_quote(
     project_name: str = "Trang bị hệ thống âm thanh",
     items: Optional[List[Dict[str, Any]]] = None,
     include_vat: bool = True,
+    discount: Optional[int] = 0,
+    discount_percent: Optional[float] = 0,
+    chiet_khau: Optional[int] = 0,
     sales_rep: str = "Nguyễn Văn Tuấn",
     delivery_notes: str = "Giao hàng và lắp đặt tận nơi trong vòng 03 ngày làm việc.",
     warranty_notes: str = "Bảo hành chính hãng 24 tháng theo tiêu chuẩn nhà sản xuất.",
@@ -24,20 +27,29 @@ def create_quote(
     items = items or []
     now = datetime.now()
     valid_until = now + timedelta(days=30)
-    quote_id = f"BG-{now.strftime('%Y%m')}-{now.strftime('%d%H%M')}"
+    # Mã báo giá kèm mili-giây đảm bảo không bao giờ trùng lặp dù gọi đồng thời
+    quote_id = f"BG-{now.strftime('%Y%m%d')}-{now.strftime('%H%M%S')}{now.strftime('%f')[:3]}"
     
     # 1. Tính toán chi tiết các dòng sản phẩm
-    subtotal = 0
+    items_total = 0
     item_rows = []
     
     for i, it in enumerate(items[:7], 1):
         name = it.get("name", f"Thiết bị âm thanh {i}")
         brand = it.get("brand", "Chính hãng")
         unit = it.get("unit", "Cái")
-        qty = int(it.get("quantity", 1))
-        price = int(it.get("price", 0))
-        total = qty * price
-        subtotal += total
+        qty = int(it.get("quantity") or it.get("qty") or 1)
+        price = int(it.get("price") or it.get("sale_price") or 0)
+        
+        # Chiết khấu từng dòng (nếu có)
+        it_discount = int(it.get("discount") or it.get("chiet_khau") or 0)
+        if 0 < it_discount <= 100:
+            it_discount_val = int(round(qty * price * (it_discount / 100.0)))
+        else:
+            it_discount_val = it_discount
+            
+        line_total = max(0, qty * price - it_discount_val)
+        items_total += line_total
         item_rows.append({
             "idx": i,
             "name": name,
@@ -45,10 +57,29 @@ def create_quote(
             "unit": unit,
             "qty": qty,
             "price": price,
-            "total": total,
+            "discount": it_discount_val,
+            "total": line_total,
             "product_id": it.get("product_id")
         })
         
+    # 2. Tính chiết khấu đơn hàng tổng thể
+    order_discount = 0
+    if discount_percent and float(discount_percent) > 0:
+        order_discount = int(round(items_total * (float(discount_percent) / 100.0)))
+    elif discount and int(discount) > 0:
+        d_val = int(discount)
+        if d_val <= 100:
+            order_discount = int(round(items_total * (d_val / 100.0)))
+        else:
+            order_discount = d_val
+    elif chiet_khau and int(chiet_khau) > 0:
+        ck_val = int(chiet_khau)
+        if ck_val <= 100:
+            order_discount = int(round(items_total * (ck_val / 100.0)))
+        else:
+            order_discount = ck_val
+
+    subtotal = max(0, items_total - order_discount)
     vat = int(round(subtotal * 0.1)) if include_vat else 0
     grand_total = subtotal + vat
     words = number_to_vietnamese_words(grand_total)
@@ -68,6 +99,8 @@ def create_quote(
         "{{PAYMENT_NOTES}}": payment_notes,
         "{{SPECIAL_NOTES}}": special_notes,
         "{{SALES_REPRESENTATIVE}}": sales_rep,
+        "{{TOTAL_BEFORE_DISCOUNT}}": f"{items_total:,.0f} đ".replace(",", "."),
+        "{{DISCOUNT_AMOUNT}}": f"{order_discount:,.0f} đ".replace(",", "."),
         "{{TOTAL_BEFORE_VAT}}": f"{subtotal:,.0f} đ".replace(",", "."),
         "{{TOTAL_VAT}}": f"{vat:,.0f} đ".replace(",", "."),
         "{{TOTAL_AMOUNT}}": f"{grand_total:,.0f} đ".replace(",", "."),
@@ -196,6 +229,9 @@ def create_quote(
         "success": True,
         "quote_id": quote_id,
         "company_name": company_name,
+        "items_total": items_total,
+        "discount": order_discount,
+        "discount_percent": round((order_discount / items_total * 100), 2) if items_total > 0 else 0,
         "subtotal": subtotal,
         "vat": vat,
         "grand_total": grand_total,

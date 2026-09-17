@@ -18,8 +18,12 @@ Kích hoạt khi người dùng có ý định lập hoặc xin bảng báo giá
 - **Contact Name:** Người liên hệ trực tiếp.
 - **Phone:** Số điện thoại để gửi Zalo ZNS / SMS.
 - **Project Name:** Tên công trình/dự án (Ví dụ: "Hệ thống âm thanh hội trường 300 chỗ").
-- **Items:** Danh sách thiết bị (Tên, Số lượng, Đơn giá dự kiến, Thương hiệu).
+- **Items:** Danh sách thiết bị (Tên, Số lượng, Đơn giá dự kiến, Thương hiệu, có thể có chiết khấu từng dòng).
+- **Discount / Chiết khấu:** (Tùy chọn) `discount` (hoặc `chiet_khau`, `discount_percent`). Nếu $\le 100$ được hiểu là %, nếu $> 100$ được hiểu là số tiền VNĐ.
 - **Include VAT:** Mặc định `true` (VAT 10%).
+
+> [!NOTE]
+> **Quy luật đơn giá của NV2:** Nếu tên thiết bị khớp với catalog có sẵn trong hệ thống, hệ thống sẽ ưu tiên lấy đơn giá niêm yết chuẩn của Phúc Thanh Audio; nếu tên thiết bị tùy biến/chưa có trong catalog, hệ thống áp dụng trực tiếp đơn giá client gửi lên.
 
 ## 3. Gọi Backend API
 
@@ -36,6 +40,7 @@ Kích hoạt khi người dùng có ý định lập hoặc xin bảng báo giá
   "phone": "0912345678",
   "email": "dung.nh@skylight.vn",
   "project_name": "Gói âm thanh Lounge & Rooftop Bar",
+  "discount_percent": 5,
   "items": [
     {
       "name": "Loa Full-range SR Italy HR-12",
@@ -67,17 +72,22 @@ Kích hoạt khi người dùng có ý định lập hoặc xin bảng báo giá
 
 ## 4. Cách Xử Lý Phản Hồi
 
-Backend xử lý tính toán tổng tiền, VAT, tạo mã `BG-xxxx`, sinh file Word chuẩn và xóa cache Redis tương ứng:
+Backend tự động sinh mã báo giá kèm mili-giây chuẩn xác (ví dụ: `BG-20260917-143022123`), đảm bảo không bao giờ bị trùng lặp mã dù gọi liên tục nhiều yêu cầu trong cùng một giây, tính toán chiết khấu, VAT, sinh file Word .docx và xóa cache Redis tương ứng:
 ```json
 {
   "action": "ANSWER",
   "blocks": [
     "📄 **Đã xuất Báo Giá thành công!**",
-    "• **Mã Báo Giá:** `BG-2026-0812`",
+    "• **Mã Báo Giá:** `BG-20260917-143022123`",
     "• **Dự án:** Gói âm thanh Lounge & Rooftop Bar",
-    "• **Khách hàng:** Công ty Cổ phần Giải trí SkyLight (Anh Nguyễn Hoàng Dũng - 0912345678)",
-    "• **Tổng cộng:** `239,800,000 đ`",
-    "• **Tải file Word .docx:** [Tải Báo Giá](https://apiphucthanhaudio.wiai.vn/api/v1/quotes/BG-2026-0812/BG-2026-0812.docx)",
+    "• **Khách hàng:** Công ty Cổ phần Giải trí SkyLight (Anh Nguyễn Hoàng Dũng - `0912345678`)",
+    "• **Cộng tiền hàng:** `236,500,000 đ`",
+    "• **Chiết khấu:** `-11,825,000 đ` (5%)",
+    "• **Tổng trước VAT:** `224,675,000 đ`",
+    "• **Thuế VAT (10%):** `22,467,500 đ`",
+    "• **Tổng cộng thanh toán:** `247,142,500 đ`",
+    "• **Bằng chữ:** *Hai trăm bốn mươi bảy triệu một trăm bốn mươi hai nghìn năm trăm đồng*",
+    "• **Tải file Word .docx:** [Tải Báo Giá](https://apiphucthanhaudio.wiai.vn/api/v1/quotes/BG-20260917-143022123/BG-20260917-143022123.docx)",
     "• **Thông báo Zalo ZNS:** Đã kích hoạt"
   ],
   "data": { ... }

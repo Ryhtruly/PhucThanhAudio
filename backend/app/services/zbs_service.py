@@ -31,7 +31,11 @@ TEMPLATES_CATALOG = {
 class ZBSService:
     def __init__(self):
         self.base_url = settings.ZBS_BASE_URL
-        self.api_key = settings.ZBS_API_KEY
+
+    @property
+    def api_key(self) -> str:
+        # Hỗ trợ lấy động từ env nếu vừa được cập nhật vào runtime mà không cần restart service
+        return os.getenv("ZBS_API_KEY") or os.getenv("ZALO_ACCESS_TOKEN") or settings.ZBS_API_KEY or ""
 
     def _call(self, method: str, path: str, payload: Optional[dict] = None) -> tuple[int, dict]:
         url = self.base_url + path
@@ -83,10 +87,11 @@ class ZBSService:
 
         if not self.api_key:
             return {
-                "success": True,
-                "status": "queued",
-                "msg_id": f"zbs_local_{clean_phone}",
-                "message": f"Hệ thống đã xếp hàng gửi tin Zalo ZBS tới {clean_phone} (Template {template_id})",
+                "success": False,
+                "status": "missing_token",
+                "error_code": -216,
+                "message": "Chưa cấu hình ZBS_API_KEY hoặc ZALO_ACCESS_TOKEN trong file .env trên máy chủ.",
+                "guide": "Vui lòng lấy Access Token mới tại Zalo API Explorer và cấu hình vào .env",
                 "payload": payload
             }
 
@@ -98,10 +103,30 @@ class ZBSService:
                 "message": resp.get("message", "Gửi thành công"),
                 "raw": resp
             }
+
+        # Kiểm tra chi tiết lỗi token Zalo OA -216 hoặc hết hạn
+        raw_str = str(resp)
+        err_msg = resp.get("message") or resp.get("error") or ""
+        err_code = resp.get("error") if isinstance(resp.get("error"), int) else resp.get("error_code") or resp.get("code")
+
+        is_token_error = (
+            err_code == -216 or 
+            "-216" in raw_str or 
+            "-216" in str(err_msg) or
+            ("token" in raw_str.lower() and ("expired" in raw_str.lower() or "invalid" in raw_str.lower()))
+        )
+
+        if is_token_error:
+            user_msg = "Zalo OA Access Token đã hết hạn (Mã lỗi -216). Cần cấp lại token tại Zalo API Explorer và cập nhật vào biến ZBS_API_KEY trong file .env."
+        else:
+            user_msg = err_msg or "Gửi tin ZBS thất bại"
+
         return {
             "success": False,
             "status_code": status,
-            "error": resp.get("message") or resp.get("raw") or "Gửi tin thất bại",
+            "error_code": -216 if is_token_error else err_code,
+            "error": user_msg,
+            "is_token_expired": is_token_error,
             "raw": resp
         }
 

@@ -74,7 +74,8 @@ def create_contract(
     
     # 3. Sinh mã hợp đồng
     now = datetime.now()
-    contract_id = f"HD-{now.strftime('%Y%m')}-{now.strftime('%d%H%M')}"
+    # Sinh mã hợp đồng kèm mili-giây đảm bảo tính duy nhất tuyệt đối
+    contract_id = f"HD-{now.strftime('%Y%m%d')}-{now.strftime('%H%M%S')}{now.strftime('%f')[:3]}"
     today_str = now.strftime("%d/%m/%Y")
     
     # 4. Map placeholders
