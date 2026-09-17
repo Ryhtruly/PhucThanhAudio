@@ -85,3 +85,24 @@ Backend xử lý tính toán tổng tiền, VAT, tạo mã `BG-xxxx`, sinh file 
 ```
 
 - **Bot render trực tiếp các dòng trong `blocks`** và cung cấp link tải báo giá Word cho người yêu cầu.
+
+---
+
+## 5. Thêm Thiết Bị Mới Vào Bảng Giá Qua Chat
+
+Khi người dùng yêu cầu thêm sản phẩm mới vào danh mục bảng giá (ví dụ: *"Thêm sản phẩm Loa Subwoofer SR SW-218 giá 45 triệu"*):
+- **Endpoint:** `POST https://phucthanhaudio.wiai.vn/api/nv2/product`
+- **Method:** `POST`
+- **Body Mẫu:**
+  ```json
+  {
+    "name": "Loa Subwoofer Kép SR SW-218",
+    "sale_price": 45000000,
+    "brand": "SR Made in Italy",
+    "category": "Loa",
+    "unit": "Cặp",
+    "stock_quantity": 5
+  }
+  ```
+- Backend sẽ tự động lưu vào SQLite Database (`phucthanh.db`) và đồng bộ lên Airtable bảng `San pham & Bang gia`. Thiết bị sẽ lập tức hiển thị trên giao diện Quote Studio của Web Quản Trị.
+

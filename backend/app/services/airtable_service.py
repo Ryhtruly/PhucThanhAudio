@@ -47,11 +47,16 @@ class AirtableService:
 
     def create_record(self, table_name: str, fields: Dict[str, Any]) -> Optional[Dict[str, Any]]:
         url = self._get_url(table_name)
-        res = requests.post(url, headers=self.headers, json={"fields": fields}, timeout=15)
-        if res.status_code in (200, 201):
-            return res.json()
-        print(f"[Airtable Error] create_record {table_name}: {res.text}")
-        return None
+        try:
+            res = requests.post(url, headers=self.headers, json={"fields": fields}, timeout=15)
+            if res.status_code in (200, 201):
+                return res.json()
+            err_msg = res.text.encode('ascii', errors='replace').decode('ascii')
+            print(f"[Airtable Error] create_record {table_name}: {err_msg}")
+            return None
+        except Exception as e:
+            print(f"[Airtable Exception] create_record {table_name}: {e}")
+            return None
 
     def create_records(self, table_name: str, records: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
         url = self._get_url(table_name)
@@ -60,11 +65,15 @@ class AirtableService:
         for i in range(0, len(records), 10):
             batch = records[i:i+10]
             payload = {"records": [{"fields": r} for r in batch]}
-            res = requests.post(url, headers=self.headers, json=payload, timeout=15)
-            if res.status_code in (200, 201):
-                created.extend(res.json().get("records", []))
-            else:
-                print(f"[Airtable Error] create_records batch {table_name}: {res.text}")
+            try:
+                res = requests.post(url, headers=self.headers, json=payload, timeout=15)
+                if res.status_code in (200, 201):
+                    created.extend(res.json().get("records", []))
+                else:
+                    err_msg = res.text.encode('ascii', errors='replace').decode('ascii')
+                    print(f"[Airtable Error] create_records batch {table_name}: {err_msg}")
+            except Exception as e:
+                print(f"[Airtable Exception] create_records batch {table_name}: {e}")
         return created
 
     def update_record(self, table_name: str, record_id: str, fields: Dict[str, Any]) -> Optional[Dict[str, Any]]:

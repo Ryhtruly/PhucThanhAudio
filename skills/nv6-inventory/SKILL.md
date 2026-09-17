@@ -49,3 +49,25 @@ Backend quét toàn bộ bảng sản phẩm trong Database SQLite, tính tổng
 
 - **Bot render toàn bộ nội dung trong mảng `blocks`** cho người hỏi.
 - Nếu `low_stock_count == 0`, hệ thống tự động thông báo: `"✅ Tất cả thiết bị đều ở mức tồn an toàn."`
+
+---
+
+## 4. Thêm Thiết Bị Mới Vào Kho & Bảng Giá
+
+Khi người dùng (Thủ kho, Quản lý) muốn bổ sung một thiết bị mới vào kho (ví dụ: *"Nhập thiết bị mới Loa Line Array SR HR-12, giá bán 35 triệu, tồn kho 10 cái"*):
+- **Endpoint:** `POST https://phucthanhaudio.wiai.vn/api/nv6/stock/product`
+- **Method:** `POST`
+- **Body Mẫu:**
+  ```json
+  {
+    "name": "Loa Line Array SR HR-12",
+    "brand": "SR Made in Italy",
+    "category": "Loa",
+    "unit": "Cái",
+    "sale_price": 35000000,
+    "import_price": 27000000,
+    "stock_quantity": 10
+  }
+  ```
+Backend tự động cấp mã SKU (`PT-xxxx`), lưu vào CSDL SQLite nội bộ và đồng bộ lên bảng giá Airtable.
+

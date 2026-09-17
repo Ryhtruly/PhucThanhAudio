@@ -77,6 +77,18 @@ class BotIntakeRequest(BaseModel):
     source: Optional[str] = "AI Bot Intake"
     send_zbs: Optional[bool] = False
 
+class BotProductAddRequest(BaseModel):
+    name: str
+    sale_price: int
+    brand: Optional[str] = "Chính hãng"
+    category: Optional[str] = "Loa"
+    unit: Optional[str] = "Cái"
+    stock_quantity: Optional[int] = 5
+    import_price: Optional[int] = 0
+    specs: Optional[str] = ""
+
+
+
 
 # =========================================================================
 # NV1: TẠO HỢP ĐỒNG TỰ ĐỘNG 1-CLICK (POST /api/nv1/contract)
@@ -567,4 +579,102 @@ def bot_nv8_create_intake(req: BotIntakeRequest):
             "estimated_budget": budget
         }
     }
+
+# =========================================================================
+# THÊM SẢN PHẨM / THIẾT BỊ MỚI VÀO BẢNG GIÁ & KHO (POST /api/nv6/stock/product & /api/nv2/product)
+# =========================================================================
+@bot_router.post("/nv6/stock/product")
+@bot_router.post("/nv2/product")
+def bot_add_product(req: BotProductAddRequest):
+    """Bot gọi khi người dùng yêu cầu thêm thiết bị mới vào bảng giá / kho qua chat."""
+    import random, string
+    from app.models.db_models import Product as DBProduct
+
+    name = req.name.strip()
+    if not name:
+        return {
+            "action": "ASK",
+            "blocks": ["⚠️ Vui lòng cung cấp **Tên thiết bị âm thanh** cần thêm vào hệ thống."],
+            "data": {"missing_field": "name"}
+        }
+
+    if not req.sale_price or req.sale_price <= 0:
+        return {
+            "action": "ASK",
+            "blocks": [f"⚠️ Vui lòng cung cấp **Đơn giá bán niêm yết (VNĐ)** cho thiết bị **{name}**."],
+            "data": {"missing_field": "sale_price"}
+        }
+
+    code_suffix = ''.join(random.choices(string.digits, k=4))
+    sku = f"PT-{code_suffix}"
+    prod_id = f"sp_{sku.lower()}"
+
+    valid_brands = {"Crown", "JBL", "Yamaha", "Shure"}
+    at_brand = req.brand if req.brand in valid_brands else "Khac"
+    valid_cats = {"Loa", "Ampli", "Micro", "Mixer", "He thong AV"}
+    at_cat = req.category if req.category in valid_cats else "Loa"
+
+    at_unit = "Bo" if str(req.unit or "").lower() in ("bo", "bộ") else "Cai"
+
+    # Push to Airtable
+    airtable_fields = {
+        "Ten SP": name,
+        "Ma SP": sku,
+        "Thuong hieu": at_brand,
+        "Nhom san pham": at_cat,
+        "Don gia ban": req.sale_price,
+        "Don vi tinh": at_unit,
+        "Trang thai": "Dang kinh doanh"
+    }
+    rec = airtable_client.create_record("San pham & Bang gia", airtable_fields)
+    final_id = rec.get("id") if rec else prod_id
+
+    # Push to SQLite DB
+    try:
+        from app.core.database import SessionLocal
+        db = SessionLocal()
+        db_p = DBProduct(
+            id=final_id,
+            sku=sku,
+            name=name,
+            brand=req.brand or "Chính hãng",
+            category=req.category or "Loa",
+            unit=req.unit or "Cái",
+            import_price=req.import_price or 0,
+            sale_price=req.sale_price,
+            stock_quantity=req.stock_quantity if req.stock_quantity is not None else 5,
+            min_threshold=2,
+            specs=req.specs or "",
+            status="Dang kinh doanh"
+        )
+        db.merge(db_p)
+        db.commit()
+        db.close()
+    except Exception as e:
+        print("[Bot Add Product DB Error]:", e)
+
+    blocks = [
+        "✅ **Đã thêm thiết bị mới vào Bảng Giá & Kho thành công!**",
+        f"• **Tên thiết bị:** {name}",
+        f"• **Mã SKU:** `{sku}`",
+        f"• **Thương hiệu:** {req.brand or 'Chính hãng'}",
+        f"• **Phân loại:** {req.category or 'Loa'} | Đơn vị: {req.unit or 'Cái'}",
+        f"• **Đơn giá bán niêm yết:** `{req.sale_price:,.0f} đ`",
+        f"• **Tồn kho khởi tạo:** {req.stock_quantity or 5} {req.unit or 'Cái'}",
+        "• **Đồng bộ hệ thống:** Đã lưu vào SQLite Database & Bảng giá Airtable (sẵn sàng tạo báo giá ngay trên Quote Studio)"
+    ]
+
+    return {
+        "action": "ANSWER",
+        "blocks": blocks,
+        "data": {
+            "id": final_id,
+            "sku": sku,
+            "name": name,
+            "brand": req.brand,
+            "sale_price": req.sale_price,
+            "stock_quantity": req.stock_quantity or 5
+        }
+    }
+
 

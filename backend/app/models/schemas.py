@@ -100,3 +100,15 @@ class InventoryTransactionRequest(BaseModel):
     reason: str = Field(..., description="Lý do nhập/xuất (Lắp đặt dự án, Nhập hàng mới, Xuất bảo hành, v.v.)")
     staff_name: Optional[str] = "Thủ kho Nguyễn Văn Nam"
     notes: Optional[str] = ""
+
+class ProductCreateRequest(BaseModel):
+    name: str = Field(..., description="Tên thiết bị / sản phẩm")
+    brand: Optional[str] = Field("Chính hãng", description="Thương hiệu (SR Italy, LSS, Verity Audio, Crown...)")
+    category: Optional[str] = Field("Loa", description="Phân loại thiết bị (Loa, Cục đẩy, Vang số, Micro, Mixer...)")
+    unit: Optional[str] = Field("Cái", description="Đơn vị tính (Cái, Cặp, Bộ)")
+    sale_price: int = Field(..., ge=0, description="Đơn giá bán ra (VNĐ)")
+    import_price: Optional[int] = Field(0, ge=0, description="Giá vốn / giá nhập (VNĐ)")
+    stock_quantity: Optional[int] = Field(5, ge=0, description="Số lượng tồn kho ban đầu")
+    min_threshold: Optional[int] = Field(2, ge=0, description="Ngưỡng cảnh báo tồn tối thiểu")
+    specs: Optional[str] = Field("", description="Thông số kỹ thuật / ghi chú")
+

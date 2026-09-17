@@ -9,7 +9,8 @@ from app.models.schemas import (
     AudioIntakeSubmitRequest,
     LeadStageUpdateRequest,
     TaxLookupRequest, ContractCreateRequest, QuoteCreateRequest,
-    LeadCreateRequest, WarrantyCreateRequest, ZBSSendRequest, InventoryTransactionRequest
+    LeadCreateRequest, WarrantyCreateRequest, ZBSSendRequest, InventoryTransactionRequest,
+    ProductCreateRequest
 )
 from app.services.tax_service import lookup_tax_info
 from app.services.contract_service import create_contract
@@ -251,7 +252,126 @@ def api_inventory_alerts():
 
 @router.get("/products")
 def api_list_products():
-    return airtable_client.list_products()
+    airtable_prods = airtable_client.list_products() or []
+    existing_names = set()
+    for p in airtable_prods:
+        f = p.get("fields", {})
+        name = f.get("Ten SP")
+        if name:
+            existing_names.add(name.strip().lower())
+
+    try:
+        from app.core.database import SessionLocal
+        from app.models.db_models import Product as DBProduct
+        db = SessionLocal()
+        db_prods = db.query(DBProduct).order_by(DBProduct.id.desc()).all()
+        for dp in db_prods:
+            if dp.name and dp.name.strip().lower() not in existing_names:
+                airtable_prods.append({
+                    "id": dp.id,
+                    "fields": {
+                        "Ten SP": dp.name,
+                        "Ma SP": dp.sku,
+                        "Thuong hieu": dp.brand or "Chính hãng",
+                        "Nhom san pham": dp.category or "Loa",
+                        "Don vi tinh": dp.unit or "Cái",
+                        "Don gia ban": dp.sale_price or 0,
+                        "Don gia nhap TB": dp.import_price or 0,
+                        "Ton kho": dp.stock_quantity or 5,
+                        "Trang thai": dp.status or "Dang kinh doanh"
+                    }
+                })
+                existing_names.add(dp.name.strip().lower())
+        db.close()
+    except Exception as e:
+        print("[api_list_products DB merge error]:", e)
+
+    return airtable_prods
+
+@router.post("/products")
+def api_create_product(req: ProductCreateRequest):
+    import random, string
+
+    name = req.name.strip()
+    if not name:
+        raise HTTPException(status_code=400, detail="Tên thiết bị không được để trống!")
+
+    # 1. Sinh SKU và ID
+    code_suffix = ''.join(random.choices(string.digits, k=4))
+    sku = f"PT-{code_suffix}"
+    prod_id = f"sp_{sku.lower()}"
+
+    # 2. Đẩy lên Airtable table "San pham & Bang gia" (dùng option an toàn cho multiple-choice)
+    valid_brands = {"Crown", "JBL", "Yamaha", "Shure"}
+    at_brand = req.brand if req.brand in valid_brands else "Khac"
+    
+    valid_cats = {"Loa", "Ampli", "Micro", "Mixer", "He thong AV"}
+    at_cat = req.category if req.category in valid_cats else "Loa"
+
+    at_unit = "Bo" if str(req.unit or "").lower() in ("bo", "bộ") else "Cai"
+
+    airtable_fields = {
+        "Ten SP": name,
+        "Ma SP": sku,
+        "Thuong hieu": at_brand,
+        "Nhom san pham": at_cat,
+        "Don gia ban": req.sale_price,
+        "Don vi tinh": at_unit,
+        "Trang thai": "Dang kinh doanh"
+    }
+    if req.import_price:
+        airtable_fields["Don gia nhap TB"] = req.import_price
+    if req.min_threshold:
+        airtable_fields["Nguong ton min"] = req.min_threshold
+    if req.specs:
+        airtable_fields["Mo ta ky thuat"] = req.specs
+
+    rec = airtable_client.create_record("San pham & Bang gia", airtable_fields)
+    final_id = rec.get("id") if rec else prod_id
+
+    # 3. Lưu vào SQLite Database nội bộ
+    try:
+        from app.core.database import SessionLocal
+        from app.models.db_models import Product as DBProduct
+        db = SessionLocal()
+        db_p = DBProduct(
+            id=final_id,
+            sku=sku,
+            name=name,
+            brand=req.brand or "Chính hãng",
+            category=req.category or "Loa",
+            unit=req.unit or "Cái",
+            import_price=req.import_price or 0,
+            sale_price=req.sale_price,
+            stock_quantity=req.stock_quantity if req.stock_quantity is not None else 5,
+            min_threshold=req.min_threshold if req.min_threshold is not None else 2,
+            specs=req.specs or "",
+            status="Dang kinh doanh"
+        )
+        db.merge(db_p)
+        db.commit()
+        db.close()
+    except Exception as e:
+        print("[DB Insert Product Error]:", e)
+
+    return {
+        "success": True,
+        "product": {
+            "id": final_id,
+            "fields": {
+                "Ten SP": name,
+                "Ma SP": sku,
+                "Thuong hieu": req.brand or "Chính hãng",
+                "Nhom san pham": req.category or "Loa",
+                "Don vi tinh": req.unit or "Cái",
+                "Don gia ban": req.sale_price,
+                "Don gia nhap TB": req.import_price or 0,
+                "Ton kho": req.stock_quantity if req.stock_quantity is not None else 5,
+                "Trang thai": "Dang kinh doanh"
+            }
+        },
+        "message": f"Đã thêm thiết bị '{name}' thành công!"
+    }
 
 # NV7: KPI Dashboard
 @router.get("/kpi/summary")

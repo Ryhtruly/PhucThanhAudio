@@ -151,6 +151,22 @@ export default function App() {
     items: []
   });
 
+  // Product Catalog State
+  const [showNewProductModal, setShowNewProductModal] = useState(false);
+  const [productSearch, setProductSearch] = useState('');
+  const [creatingProduct, setCreatingProduct] = useState(false);
+  const [newProductForm, setNewProductForm] = useState({
+    name: '',
+    brand: 'SR Made in Italy',
+    category: 'Loa',
+    sale_price: '',
+    import_price: '',
+    unit: 'Cặp',
+    stock_quantity: 5,
+    specs: ''
+  });
+
+
   // Contract Wizard State
   const [createdContract, setCreatedContract] = useState(null);
   const [contractForm, setContractForm] = useState({
@@ -240,6 +256,61 @@ export default function App() {
       showToast(`Đang tải file: ${finalFilename}`);
     }
   };
+
+  const handleCreateProduct = async (e) => {
+    if (e) e.preventDefault();
+    if (!newProductForm.name.trim()) {
+      showToast('Vui lòng nhập tên thiết bị!');
+      return;
+    }
+    const salePriceNum = Number(String(newProductForm.sale_price).replace(/\D/g, ''));
+    if (!salePriceNum || salePriceNum <= 0) {
+      showToast('Vui lòng nhập đơn giá bán hợp lệ!');
+      return;
+    }
+
+    setCreatingProduct(true);
+    try {
+      const res = await fetch(`${API_BASE}/products`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          name: newProductForm.name.trim(),
+          brand: newProductForm.brand,
+          category: newProductForm.category,
+          unit: newProductForm.unit,
+          sale_price: salePriceNum,
+          import_price: Number(String(newProductForm.import_price || 0).replace(/\D/g, '')),
+          stock_quantity: Number(newProductForm.stock_quantity || 5),
+          specs: newProductForm.specs || ''
+        })
+      });
+      const data = await res.json();
+      if (data && data.success && data.product) {
+        setProducts(prev => [data.product, ...prev]);
+        showToast(`Đã thêm thiết bị mới: ${data.product.fields['Ten SP']}!`);
+        setShowNewProductModal(false);
+        setNewProductForm({
+          name: '',
+          brand: 'SR Made in Italy',
+          category: 'Loa',
+          sale_price: '',
+          import_price: '',
+          unit: 'Cặp',
+          stock_quantity: 5,
+          specs: ''
+        });
+      } else {
+        showToast(data.detail || 'Không thể thêm sản phẩm, vui lòng thử lại!');
+      }
+    } catch (err) {
+      console.error(err);
+      showToast('Lỗi kết nối khi thêm sản phẩm!');
+    } finally {
+      setCreatingProduct(false);
+    }
+  };
+
 
 
   const fetchInitialData = async () => {
@@ -1806,35 +1877,74 @@ export default function App() {
                 </div>
 
                 <div className="white-card" style={{ padding: 20 }}>
-                  <h4 style={{ fontSize: 16, fontWeight: 800, color: '#0F172A', marginBottom: 12 }}>
-                    Danh Mục Thiết Bị Âm Thanh (Từ Airtable)
-                  </h4>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
+                    <div>
+                      <h4 style={{ fontSize: 16, fontWeight: 800, color: '#0F172A', margin: 0 }}>
+                        Danh Mục Thiết Bị Âm Thanh
+                      </h4>
+                      <span style={{ fontSize: 11.5, color: '#64748B' }}>
+                        {products.length} thiết bị có sẵn trên hệ thống & Airtable
+                      </span>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => setShowNewProductModal(true)}
+                      className="btn-primary"
+                      style={{ padding: '6px 14px', fontSize: 12, display: 'inline-flex', alignItems: 'center', gap: 6 }}
+                    >
+                      + Thêm Thiết Bị Mới
+                    </button>
+                  </div>
+
+                  <div style={{ marginBottom: 12 }}>
+                    <input
+                      type="text"
+                      placeholder="🔍 Tìm thiết bị theo tên, thương hiệu (SR, Crown, JBL...), mã..."
+                      className="input-field"
+                      style={{ padding: '8px 12px', fontSize: 12.5 }}
+                      value={productSearch}
+                      onChange={e => setProductSearch(e.target.value)}
+                    />
+                  </div>
+
                   <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10, maxHeight: 280, overflowY: 'auto' }}>
-                    {products.map(p => {
-                      const f = p.fields || {};
-                      return (
-                        <div
-                          key={p.id}
-                          onClick={() => addProductToQuote(p)}
-                          style={{
-                            padding: 12,
-                            background: '#F8FAFC',
-                            borderRadius: 10,
-                            border: '1px solid #E2E8F0',
-                            cursor: 'pointer',
-                            transition: 'all 0.15s ease'
-                          }}
-                        >
-                          <div style={{ fontWeight: 700, fontSize: 13, color: '#0F172A' }}>{f['Ten SP']}</div>
-                          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: 6 }}>
-                            <span className="badge badge-red" style={{ fontSize: 10 }}>{f['Thuong hieu']}</span>
-                            <span style={{ fontWeight: 800, color: '#D97706', fontSize: 13 }}>
-                              {(f['Don gia ban'] || 0).toLocaleString('vi-VN')} đ
-                            </span>
+                    {products
+                      .filter(p => {
+                        const f = p.fields || {};
+                        const q = (productSearch || '').toLowerCase().trim();
+                        if (!q) return true;
+                        return (
+                          (f['Ten SP'] || '').toLowerCase().includes(q) ||
+                          (f['Thuong hieu'] || '').toLowerCase().includes(q) ||
+                          (f['Nhom san pham'] || '').toLowerCase().includes(q) ||
+                          (f['Ma SP'] || '').toLowerCase().includes(q)
+                        );
+                      })
+                      .map(p => {
+                        const f = p.fields || {};
+                        return (
+                          <div
+                            key={p.id}
+                            onClick={() => addProductToQuote(p)}
+                            style={{
+                              padding: 12,
+                              background: '#F8FAFC',
+                              borderRadius: 10,
+                              border: '1px solid #E2E8F0',
+                              cursor: 'pointer',
+                              transition: 'all 0.15s ease'
+                            }}
+                          >
+                            <div style={{ fontWeight: 700, fontSize: 13, color: '#0F172A' }}>{f['Ten SP']}</div>
+                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: 6 }}>
+                              <span className="badge badge-red" style={{ fontSize: 10 }}>{f['Thuong hieu']}</span>
+                              <span style={{ fontWeight: 800, color: '#D97706', fontSize: 13 }}>
+                                {(f['Don gia ban'] || 0).toLocaleString('vi-VN')} đ
+                              </span>
+                            </div>
                           </div>
-                        </div>
-                      );
-                    })}
+                        );
+                      })}
                   </div>
                 </div>
 
@@ -1899,6 +2009,185 @@ export default function App() {
               </div>
 
             </div>
+
+            {/* Modal: Thêm Thiết Bị Mới Vào Bảng Giá & Kho */}
+            {showNewProductModal && (
+              <div style={{
+                position: 'fixed',
+                top: 0,
+                left: 0,
+                right: 0,
+                bottom: 0,
+                backgroundColor: 'rgba(15, 23, 42, 0.55)',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                zIndex: 1000,
+                padding: 20
+              }}>
+                <div className="white-card" style={{ width: '100%', maxWidth: 540, padding: 26, boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.2)' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 18, borderBottom: '1px solid #E2E8F0', paddingBottom: 12 }}>
+                    <div>
+                      <h3 style={{ fontSize: 18, fontWeight: 800, color: '#0F172A', margin: 0 }}>Thêm Thiết Bị Mới Vào Bảng Giá</h3>
+                      <p style={{ fontSize: 12, color: '#64748B', margin: '4px 0 0 0' }}>Lưu vào CSDL nội bộ và đồng bộ lên bảng giá Airtable</p>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => setShowNewProductModal(false)}
+                      style={{ background: 'transparent', border: 'none', fontSize: 22, cursor: 'pointer', color: '#64748B' }}
+                    >
+                      ×
+                    </button>
+                  </div>
+
+                  <form onSubmit={handleCreateProduct} style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+                    <div>
+                      <label style={{ fontSize: 12, fontWeight: 700, color: '#334155', display: 'block', marginBottom: 4 }}>
+                        Tên Thiết Bị / Model *
+                      </label>
+                      <input
+                        className="input-field"
+                        placeholder="Ví dụ: Loa Subwoofer Active SR SW-21A, Cục đẩy Crown XLi 3500..."
+                        value={newProductForm.name}
+                        onChange={e => setNewProductForm({ ...newProductForm, name: e.target.value })}
+                        required
+                      />
+                    </div>
+
+                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+                      <div>
+                        <label style={{ fontSize: 12, fontWeight: 700, color: '#334155', display: 'block', marginBottom: 4 }}>
+                          Thương Hiệu
+                        </label>
+                        <select
+                          className="input-field"
+                          value={newProductForm.brand}
+                          onChange={e => setNewProductForm({ ...newProductForm, brand: e.target.value })}
+                        >
+                          {BRANDS.map(b => (
+                            <option key={b} value={b}>{b}</option>
+                          ))}
+                          <option value="Crown">Crown</option>
+                          <option value="JBL">JBL</option>
+                          <option value="Yamaha">Yamaha</option>
+                          <option value="Shure">Shure</option>
+                          <option value="Khác">Khác</option>
+                        </select>
+                      </div>
+
+                      <div>
+                        <label style={{ fontSize: 12, fontWeight: 700, color: '#334155', display: 'block', marginBottom: 4 }}>
+                          Phân Loại Thiết Bị
+                        </label>
+                        <select
+                          className="input-field"
+                          value={newProductForm.category}
+                          onChange={e => setNewProductForm({ ...newProductForm, category: e.target.value })}
+                        >
+                          <option value="Loa">Loa (Full, Sub, Line Array)</option>
+                          <option value="Cục đẩy công suất">Cục đẩy công suất (Main Amp)</option>
+                          <option value="Vang số / DSP">Vang số / DSP xử lý</option>
+                          <option value="Micro">Micro không dây / có dây</option>
+                          <option value="Mixer">Bàn Mixer / Bàn trộn</option>
+                          <option value="Phụ kiện">Phụ kiện & Quản lý nguồn</option>
+                        </select>
+                      </div>
+                    </div>
+
+                    <div style={{ display: 'grid', gridTemplateColumns: '1.2fr 0.8fr', gap: 12 }}>
+                      <div>
+                        <label style={{ fontSize: 12, fontWeight: 700, color: '#334155', display: 'block', marginBottom: 4 }}>
+                          Đơn Giá Bán (VNĐ) *
+                        </label>
+                        <input
+                          type="number"
+                          className="input-field"
+                          placeholder="Ví dụ: 32000000"
+                          value={newProductForm.sale_price}
+                          onChange={e => setNewProductForm({ ...newProductForm, sale_price: e.target.value })}
+                          required
+                        />
+                      </div>
+
+                      <div>
+                        <label style={{ fontSize: 12, fontWeight: 700, color: '#334155', display: 'block', marginBottom: 4 }}>
+                          Đơn Vị Tính
+                        </label>
+                        <select
+                          className="input-field"
+                          value={newProductForm.unit}
+                          onChange={e => setNewProductForm({ ...newProductForm, unit: e.target.value })}
+                        >
+                          <option value="Cái">Cái</option>
+                          <option value="Cặp">Cặp</option>
+                          <option value="Bộ">Bộ</option>
+                          <option value="Hệ thống">Hệ thống</option>
+                        </select>
+                      </div>
+                    </div>
+
+                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+                      <div>
+                        <label style={{ fontSize: 12, fontWeight: 700, color: '#334155', display: 'block', marginBottom: 4 }}>
+                          Giá Nhập Dự Kiến (VNĐ)
+                        </label>
+                        <input
+                          type="number"
+                          className="input-field"
+                          placeholder="Ví dụ: 24000000"
+                          value={newProductForm.import_price}
+                          onChange={e => setNewProductForm({ ...newProductForm, import_price: e.target.value })}
+                        />
+                      </div>
+
+                      <div>
+                        <label style={{ fontSize: 12, fontWeight: 700, color: '#334155', display: 'block', marginBottom: 4 }}>
+                          Tồn Kho Khởi Tạo
+                        </label>
+                        <input
+                          type="number"
+                          className="input-field"
+                          placeholder="5"
+                          value={newProductForm.stock_quantity}
+                          onChange={e => setNewProductForm({ ...newProductForm, stock_quantity: e.target.value })}
+                        />
+                      </div>
+                    </div>
+
+                    <div>
+                      <label style={{ fontSize: 12, fontWeight: 700, color: '#334155', display: 'block', marginBottom: 4 }}>
+                        Mô Tả Kỹ Thuật / Ghi Chú
+                      </label>
+                      <input
+                        className="input-field"
+                        placeholder="Công suất, kích thước củ loa, dải tần, nguồn gốc xuất xứ..."
+                        value={newProductForm.specs}
+                        onChange={e => setNewProductForm({ ...newProductForm, specs: e.target.value })}
+                      />
+                    </div>
+
+                    <div style={{ display: 'flex', gap: 10, marginTop: 10, justifyContent: 'flex-end' }}>
+                      <button
+                        type="button"
+                        onClick={() => setShowNewProductModal(false)}
+                        className="btn-secondary"
+                        style={{ padding: '8px 16px', fontSize: 13 }}
+                      >
+                        Hủy
+                      </button>
+                      <button
+                        type="submit"
+                        disabled={creatingProduct}
+                        className="btn-primary"
+                        style={{ padding: '8px 20px', fontSize: 13 }}
+                      >
+                        {creatingProduct ? 'Đang lưu...' : 'Lưu Thiết Bị Vào Bảng Giá'}
+                      </button>
+                    </div>
+                  </form>
+                </div>
+              </div>
+            )}
           </div>
         )}
 
