@@ -450,9 +450,50 @@ def api_kpi_summary():
     return data
 
 
+def auto_create_contract_for_won_lead(company_name: str, contact_name: str, phone: str, estimated_value: int, demand: str) -> Optional[str]:
+    """Tự động khởi tạo hợp đồng kinh tế khi cơ hội bán hàng (Lead) được chốt thành công (Won)."""
+    from app.core.database import SessionLocal
+    from app.models.db_models import Contract as DBContract
+    db = SessionLocal()
+    try:
+        clean_phone = (phone or "").strip().replace(" ", "").replace("+", "")
+        # Kiểm tra nếu hợp đồng cho khách hàng này đã tồn tại thì không tạo trùng
+        existing = db.query(DBContract).filter(
+            (DBContract.company_name == company_name) |
+            (DBContract.phone == phone) |
+            (DBContract.phone == clean_phone)
+        ).first()
+        if existing:
+            return existing.contract_code
+
+        from app.services.contract_service import create_contract
+        amount = estimated_value if (estimated_value and estimated_value > 0) else 250000000
+        res = create_contract(
+            mst="",
+            phone=clean_phone or phone,
+            company_name=company_name,
+            contract_type="Cung cấp & Lắp đặt thiết bị âm thanh",
+            total_amount=amount,
+            special_terms=f"Hợp đồng tự động khởi tạo từ cơ hội chốt thành công: {demand or 'Hệ thống âm thanh Phúc Thanh Audio'}",
+            sales_rep="Nguyễn Văn Tuấn",
+            send_zbs=False,
+            include_vat=True,
+            price_includes_vat=False
+        )
+        redis_client.delete("contracts_list")
+        redis_client.delete("kpi_summary")
+        return res.get("contract_id")
+    except Exception as e:
+        print(f"[Auto Create Contract for Won Lead Error]: {e}")
+        return None
+    finally:
+        db.close()
+
+
 @router.patch("/leads/{lead_id}/stage")
 def api_update_lead_stage(lead_id: str, req: LeadStageUpdateRequest):
     target_stage = req.stage
+    lead_info = {}
 
     # 1. Cập nhật SQLite nội bộ trước (< 2ms) đảm bảo lưu bền vững
     try:
@@ -463,6 +504,13 @@ def api_update_lead_stage(lead_id: str, req: LeadStageUpdateRequest):
         if lead:
             lead.stage = target_stage
             db.commit()
+            lead_info = {
+                "company_name": lead.company_name,
+                "contact_name": lead.contact_name,
+                "phone": lead.phone,
+                "estimated_value": lead.estimated_value or 0,
+                "demand": lead.demand or ""
+            }
         else:
             # Nếu lead chưa có trong SQLite (tạo từ nguồn khác/Airtable), tự động import vào SQLite
             try:
@@ -483,6 +531,13 @@ def api_update_lead_stage(lead_id: str, req: LeadStageUpdateRequest):
                     )
                     db.merge(new_db_lead)
                     db.commit()
+                    lead_info = {
+                        "company_name": new_db_lead.company_name,
+                        "contact_name": new_db_lead.contact_name,
+                        "phone": new_db_lead.phone,
+                        "estimated_value": new_db_lead.estimated_value or 0,
+                        "demand": new_db_lead.demand or ""
+                    }
             except Exception as e_sync:
                 print("[Sync missing lead into SQLite]:", e_sync)
         db.close()
@@ -493,7 +548,21 @@ def api_update_lead_stage(lead_id: str, req: LeadStageUpdateRequest):
     redis_client.delete("leads_list")
     redis_client.delete("kpi_summary")
 
-    # 3. Cập nhật Airtable trong background thread (không block 15s gây timeout trình duyệt khi người dùng reload)
+    # 3. Nếu chuyển sang 'Won' (Ký Kết Hợp Đồng) -> Tự động khởi tạo Hợp đồng mới
+    created_contract_code = None
+    if target_stage == "Won" and lead_info:
+        try:
+            created_contract_code = auto_create_contract_for_won_lead(
+                company_name=lead_info.get("company_name", "Khách hàng"),
+                contact_name=lead_info.get("contact_name", ""),
+                phone=lead_info.get("phone", ""),
+                estimated_value=lead_info.get("estimated_value", 0),
+                demand=lead_info.get("demand", "")
+            )
+        except Exception as e_c:
+            print("[Auto create contract trigger error]:", e_c)
+
+    # 4. Cập nhật Airtable trong background thread (không block 15s gây timeout trình duyệt khi người dùng reload)
     import threading
     def sync_to_airtable(lid: str, stage_val: str):
         try:
@@ -511,7 +580,12 @@ def api_update_lead_stage(lead_id: str, req: LeadStageUpdateRequest):
 
     threading.Thread(target=sync_to_airtable, args=(lead_id, target_stage), daemon=True).start()
 
-    return {"success": True, "lead_id": lead_id, "stage": target_stage}
+    return {
+        "success": True,
+        "lead_id": lead_id,
+        "stage": target_stage,
+        "created_contract_code": created_contract_code
+    }
 
 
 # ==========================================

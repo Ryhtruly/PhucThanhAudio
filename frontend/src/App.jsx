@@ -511,6 +511,14 @@ export default function App() {
       if (!res.ok || !data.success) {
         showToast('Lỗi cập nhật trạng thái cơ hội', 'error');
         fetchInitialData();
+      } else {
+        if (data.created_contract_code) {
+          showToast(`Đã chốt thành công & tự động khởi tạo Hợp đồng ${data.created_contract_code}!`, 'success');
+        }
+        // Nếu kéo vào Won, nạp lại dữ liệu ngay để tab Quản Lý Hợp Đồng và KPI hiển thị hợp đồng mới
+        if (targetStage === 'Won') {
+          fetchInitialData();
+        }
       }
     } catch (err) {
       showToast('Lỗi kết nối tới máy chủ cập nhật trạng thái', 'error');

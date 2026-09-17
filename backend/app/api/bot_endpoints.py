@@ -260,6 +260,20 @@ def bot_nv3_update_deal(deal_id: str, req: BotDealUpdateRequest):
     redis_client.delete("leads_list")
     redis_client.delete("kpi_summary")
 
+    c_code = None
+    if req.stage == "Won" and ld:
+        try:
+            from app.api.v1.endpoints import auto_create_contract_for_won_lead
+            c_code = auto_create_contract_for_won_lead(
+                company_name=ld.company_name or deal_id,
+                contact_name=ld.contact_name or "",
+                phone=ld.phone or "",
+                estimated_value=ld.estimated_value or 0,
+                demand=ld.demand or ""
+            )
+        except Exception as ce:
+            print("[Bot Trigger Contract Error]:", ce)
+
     stage_names = {
         "New": "Lead Mới",
         "Qualified": "Khảo Sát & Demo",
@@ -275,12 +289,14 @@ def bot_nv3_update_deal(deal_id: str, req: BotDealUpdateRequest):
         f"• **Giai đoạn mới:** {st_label}"
     ]
     if req.stage == "Won":
-        blocks.append("👉 *Deal đã chuyển thành công, bạn có thể gọi NV1 để tạo Hợp đồng ngay!*")
+        if c_code:
+            blocks.append(f"📄 **Đã tự động khởi tạo Hợp Đồng mới:** `{c_code}` trong mục Quản Lý Hợp Đồng!")
+        blocks.append("👉 *Deal đã chốt thành công, hợp đồng đã sẵn sàng trong Quản Lý Hợp Đồng để Ký Duyệt.*")
 
     return {
         "action": "ANSWER",
         "blocks": blocks,
-        "data": {"deal_id": deal_id, "stage": req.stage, "updated": True}
+        "data": {"deal_id": deal_id, "stage": req.stage, "updated": True, "created_contract_code": c_code}
     }
 
 # =========================================================================
