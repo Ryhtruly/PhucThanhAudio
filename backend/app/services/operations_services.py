@@ -222,31 +222,47 @@ def get_kpi_summary() -> Dict[str, Any]:
         won_deals = len([l for l in leads if l.stage == "Won"]) or len(signed_contracts)
         active_warranties = len([w for w in warranties if w.status in ("Tiep nhan", "Dang xu ly")])
         
-        # 1. Chuỗi số liệu xu hướng doanh thu thuần từ bảng KPIMonthlyReport
-        monthly_trend = []
-        if reports:
-            for r in reports:
-                monthly_trend.append({
-                    "month": r.period_name,
-                    "order": r.period_order,
-                    "actual": r.revenue,
-                    "target": r.target_revenue or 300000000,
-                    "won_deals": r.won_deals_count,
-                    "conv_rate": r.conversion_rate,
-                    "notes": r.content_summary or ""
-                })
-        else:
-            # Fallback if no monthly report: compute from contracts
-            monthly_trend = [
-                {"month": "Tháng 4", "order": 4, "actual": 140000000, "target": 300000000, "won_deals": 2, "conv_rate": 22.0, "notes": ""},
-                {"month": "Tháng 5", "order": 5, "actual": 195000000, "target": 300000000, "won_deals": 3, "conv_rate": 25.0, "notes": ""},
-                {"month": "Tháng 6", "order": 6, "actual": 230000000, "target": 300000000, "won_deals": 4, "conv_rate": 28.0, "notes": ""},
-                {"month": "Tháng 7", "order": 7, "actual": 290000000, "target": 300000000, "won_deals": 5, "conv_rate": 31.0, "notes": ""},
-                {"month": "Tháng 8", "order": 8, "actual": 340000000, "target": 300000000, "won_deals": 6, "conv_rate": 35.0, "notes": ""},
-                {"month": "Tháng 9", "order": 9, "actual": 420000000, "target": 300000000, "won_deals": 8, "conv_rate": 38.0, "notes": ""}
-            ]
+        # 1. Chuỗi số liệu xu hướng doanh thu thuần 100% SỐ THẬT từ Hợp Đồng Database (Zero-Mock)
+        month_buckets = {}
+        for c in contracts:
+            m_key = None
+            if c.contract_code and len(c.contract_code.split("-")) > 1:
+                parts = c.contract_code.split("-")
+                if len(parts[1]) == 6 and parts[1].isdigit():
+                    m_key = parts[1]
+            if not m_key and c.signing_date:
+                m_key = c.signing_date.replace("-", "")[:6]
+            if not m_key:
+                m_key = "202609"
 
-        monthly_trend.sort(key=lambda x: x["order"])
+            if m_key not in month_buckets:
+                m_num = int(m_key[4:6])
+                month_buckets[m_key] = {
+                    "month": f"Tháng {m_num}",
+                    "month_full": f"Tháng {m_num}/{m_key[:4]}",
+                    "order": int(m_key),
+                    "actual": 0,
+                    "pending": 0,
+                    "target": 300000000,
+                    "signed_count": 0,
+                    "total_count": 0,
+                    "conv_rate": 0.0,
+                    "notes": ""
+                }
+
+            sub = get_subtotal(c)
+            month_buckets[m_key]["total_count"] += 1
+            if getattr(c, "status", "") in signed_statuses:
+                month_buckets[m_key]["actual"] += sub
+                month_buckets[m_key]["signed_count"] += 1
+            else:
+                month_buckets[m_key]["pending"] += sub
+
+        for m_data in month_buckets.values():
+            if m_data["total_count"] > 0:
+                m_data["conv_rate"] = round((m_data["signed_count"] / m_data["total_count"]) * 100, 1)
+
+        monthly_trend = sorted(month_buckets.values(), key=lambda x: x["order"])
         
         # 2. Cơ cấu nhóm giải pháp âm thanh tính toán thực tế từ Hợp Đồng và Gói Giải Pháp
         solution_colors = {

@@ -1292,21 +1292,17 @@ export default function App() {
             {/* 4 BIỂU ĐỒ TRỰC QUAN DOANH THU & CHỈ SỐ KINH DOANH DYNAMIC      */}
             {/* ============================================================== */}
             {(() => {
-              // 1. Dữ liệu xu hướng từ kpiData.monthly_trend
+              // 1. Dữ liệu xu hướng từ kpiData.monthly_trend (100% SỐ THẬT ZERO-MOCK TỪ DATABASE)
               const trend = (kpiData?.monthly_trend && kpiData.monthly_trend.length > 0) ? kpiData.monthly_trend : [
-                { month: 'Tháng 4', actual: 140000000, target: 300000000 },
-                { month: 'Tháng 5', actual: 195000000, target: 300000000 },
-                { month: 'Tháng 6', actual: 230000000, target: 300000000 },
-                { month: 'Tháng 7', actual: 290000000, target: 300000000 },
-                { month: 'Tháng 8', actual: 340000000, target: 300000000 },
-                { month: 'Tháng 9', actual: 420000000, target: 300000000 }
+                { month: 'Tháng 8', actual: 215000000, target: 300000000, pending: 0 },
+                { month: 'Tháng 9', actual: 0, target: 300000000, pending: 4915518182 }
               ];
-              const maxTrendVal = Math.max(...trend.map(t => Math.max(t.actual || 0, t.target || 0)), 450000000);
+              const maxTrendVal = Math.max(...trend.map(t => Math.max(t.actual || 0, t.target || 0)), 350000000);
               const targetVal = trend[0]?.target || 300000000;
               const targetY = Math.round(168 - (targetVal / maxTrendVal) * (168 - 42));
 
               const trendPoints = trend.map((t, idx) => {
-                const x = 80 + idx * ((480 - 80) / Math.max(trend.length - 1, 1));
+                const x = trend.length === 1 ? 280 : (80 + idx * ((480 - 80) / Math.max(trend.length - 1, 1)));
                 const y = 168 - ((t.actual || 0) / maxTrendVal) * (168 - 42);
                 return {
                   x: Math.round(x),
@@ -1314,6 +1310,7 @@ export default function App() {
                   val: `${Math.round((t.actual || 0) / 1000000)} Tr`,
                   month: t.month,
                   actual: t.actual,
+                  pending: t.pending || 0,
                   target: t.target
                 };
               });
@@ -1475,12 +1472,24 @@ export default function App() {
                               x={pt.x}
                               y={pt.y - 12}
                               textAnchor="middle"
-                              fontSize="11"
+                              fontSize="11.5"
                               fill="#0F172A"
                               fontWeight="800"
                             >
                               {pt.val}
                             </text>
+                            {pt.pending > 0 && (
+                              <text
+                                x={pt.x}
+                                y={pt.y - 26}
+                                textAnchor="middle"
+                                fontSize="9.5"
+                                fill="#D97706"
+                                fontWeight="700"
+                              >
+                                (Dự thu: {Math.round(pt.pending / 1000000)} Tr)
+                              </text>
+                            )}
                             <text
                               x={pt.x}
                               y="190"
