@@ -123,3 +123,26 @@ class ProductCreateRequest(BaseModel):
     min_threshold: Optional[int] = Field(2, ge=0, description="Ngưỡng cảnh báo tồn tối thiểu")
     specs: Optional[str] = Field("", description="Thông số kỹ thuật / ghi chú")
 
+class ProductUpdateRequest(BaseModel):
+    name: Optional[str] = None
+    brand: Optional[str] = None
+    category: Optional[str] = None
+    unit: Optional[str] = None
+    sale_price: Optional[int] = None
+    import_price: Optional[int] = None
+    stock_quantity: Optional[int] = None
+    min_threshold: Optional[int] = None
+    specs: Optional[str] = None
+    status: Optional[str] = None
+
+class QuoteUpdateRequest(BaseModel):
+    project_name: Optional[str] = None
+    company_name: Optional[str] = None
+    contact_name: Optional[str] = None
+    phone: Optional[str] = None
+    email: Optional[str] = None
+    status: Optional[str] = None
+    notes: Optional[str] = None
+    valid_until: Optional[str] = None
+    grand_total: Optional[int] = None
+

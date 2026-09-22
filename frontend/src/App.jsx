@@ -1,6 +1,6 @@
 import PublicIntakePage from './pages/PublicIntakePage';
 import React, { useState, useEffect } from 'react';
-import { Trash2, Lock, Mail, LogOut, Eye, EyeOff } from 'lucide-react';
+import { Trash2, Lock, Mail, LogOut, Eye, EyeOff, Pencil, Plus, Minus } from 'lucide-react';
 
 import { API_BASE, APP_TITLE, APP_SUBTITLE, COMPANY_NAME, COMPANY_ADDRESS, HOTLINE, ZALO_URL, getPublicIntakeUrl } from './config';
 
@@ -178,6 +178,15 @@ export default function App() {
     specs: ''
   });
 
+  // Product Edit & Delete State
+  const [editingProduct, setEditingProduct] = useState(null);
+  const [deletingProduct, setDeletingProduct] = useState(null);
+  const [updatingProduct, setUpdatingProduct] = useState(false);
+
+  // Quote Edit & Delete State
+  const [editingQuote, setEditingQuote] = useState(null);
+  const [deletingQuote, setDeletingQuote] = useState(null);
+  const [updatingQuote, setUpdatingQuote] = useState(false);
 
   // Contract Wizard State
   const [createdContract, setCreatedContract] = useState(null);
@@ -322,6 +331,144 @@ export default function App() {
       showToast('Lỗi kết nối khi thêm sản phẩm!');
     } finally {
       setCreatingProduct(false);
+    }
+  };
+
+  const openEditProduct = (prod) => {
+    if (!prod) return;
+    const isInv = !prod.fields;
+    const f = prod.fields || {};
+    setEditingProduct({
+      id: prod.id || f['Ma SP'] || prod.sku,
+      sku: isInv ? (prod.sku || '') : (f['Ma SP'] || ''),
+      name: isInv ? (prod.name || '') : (f['Ten SP'] || ''),
+      brand: isInv ? (prod.brand || 'SR Made in Italy') : (f['Thuong hieu'] || 'SR Made in Italy'),
+      category: isInv ? (prod.category || 'Loa') : (f['Nhom san pham'] || 'Loa'),
+      unit: isInv ? (prod.unit || 'Cái') : (f['Don vi tinh'] || 'Cái'),
+      sale_price: isInv ? (prod.sale_price || 0) : (f['Don gia ban'] || 0),
+      import_price: isInv ? (prod.import_price || 0) : (f['Don gia nhap TB'] || 0),
+      stock_quantity: isInv ? (prod.stock || 0) : (f['Ton kho'] || 0),
+      min_threshold: isInv ? (prod.min_threshold || 2) : 2,
+      specs: isInv ? '' : (f['Mo ta ky thuat'] || ''),
+      status: isInv ? (prod.status || 'Dang kinh doanh') : (f['Trang thai'] || 'Dang kinh doanh')
+    });
+  };
+
+  const handleSaveEditedProduct = async (e) => {
+    if (e) e.preventDefault();
+    if (!editingProduct || !editingProduct.name.trim()) {
+      showToast('Vui lòng nhập tên thiết bị!', 'error');
+      return;
+    }
+    const salePrice = Number(String(editingProduct.sale_price || 0).replace(/\D/g, ''));
+    const importPrice = Number(String(editingProduct.import_price || 0).replace(/\D/g, ''));
+    const stockQty = Number(editingProduct.stock_quantity || 0);
+
+    setUpdatingProduct(true);
+    try {
+      const res = await fetch(`${API_BASE}/products/${editingProduct.id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          name: editingProduct.name.trim(),
+          brand: editingProduct.brand,
+          category: editingProduct.category,
+          unit: editingProduct.unit,
+          sale_price: salePrice,
+          import_price: importPrice,
+          stock_quantity: stockQty,
+          min_threshold: Number(editingProduct.min_threshold || 2),
+          specs: editingProduct.specs || '',
+          status: editingProduct.status || 'Dang kinh doanh'
+        })
+      });
+      const data = await res.json();
+      if (res.ok && data.success) {
+        showToast(`Đã cập nhật thiết bị "${editingProduct.name}"!`);
+        const updatedProducts = products.map(p => {
+          if (p.id === editingProduct.id || (p.fields && p.fields['Ma SP'] === editingProduct.sku)) {
+            return {
+              ...p,
+              fields: {
+                ...p.fields,
+                'Ten SP': editingProduct.name,
+                'Thuong hieu': editingProduct.brand,
+                'Nhom san pham': editingProduct.category,
+                'Don vi tinh': editingProduct.unit,
+                'Don gia ban': salePrice,
+                'Don gia nhap TB': importPrice,
+                'Ton kho': stockQty,
+                'Trang thai': editingProduct.status,
+                'Mo ta ky thuat': editingProduct.specs
+              }
+            };
+          }
+          return p;
+        });
+        setProducts(updatedProducts);
+        try { localStorage.setItem('pt_products', JSON.stringify(updatedProducts)); } catch {}
+
+        if (inventoryData && inventoryData.items) {
+          const updatedItems = inventoryData.items.map(it => {
+            if (it.id === editingProduct.id || it.sku === editingProduct.sku) {
+              return {
+                ...it,
+                name: editingProduct.name,
+                brand: editingProduct.brand,
+                category: editingProduct.category,
+                unit: editingProduct.unit,
+                sale_price: salePrice,
+                import_price: importPrice,
+                stock: stockQty,
+                total_value: stockQty * importPrice
+              };
+            }
+            return it;
+          });
+          setInventoryData(prev => ({ ...prev, items: updatedItems }));
+          try { localStorage.setItem('pt_inventoryData', JSON.stringify({ ...inventoryData, items: updatedItems })); } catch {}
+        }
+
+        setEditingProduct(null);
+        fetchInventory();
+      } else {
+        showToast(data.detail || 'Không thể cập nhật thiết bị!', 'error');
+      }
+    } catch (err) {
+      showToast('Lỗi kết nối khi cập nhật thiết bị!', 'error');
+    } finally {
+      setUpdatingProduct(false);
+    }
+  };
+
+  const handleConfirmDeleteProduct = async () => {
+    if (!deletingProduct) return;
+    setUpdatingProduct(true);
+    try {
+      const res = await fetch(`${API_BASE}/products/${deletingProduct.id}`, {
+        method: 'DELETE'
+      });
+      const data = await res.json();
+      if (res.ok && data.success) {
+        showToast(`Đã xóa thiết bị "${deletingProduct.name}"!`);
+        const updatedProducts = products.filter(p => p.id !== deletingProduct.id && (p.fields?.['Ma SP'] !== deletingProduct.sku));
+        setProducts(updatedProducts);
+        try { localStorage.setItem('pt_products', JSON.stringify(updatedProducts)); } catch {}
+
+        if (inventoryData && inventoryData.items) {
+          const updatedItems = inventoryData.items.filter(it => it.id !== deletingProduct.id && it.sku !== deletingProduct.sku);
+          setInventoryData(prev => ({ ...prev, items: updatedItems }));
+          try { localStorage.setItem('pt_inventoryData', JSON.stringify({ ...inventoryData, items: updatedItems })); } catch {}
+        }
+        setDeletingProduct(null);
+        fetchInventory();
+      } else {
+        showToast(data.detail || 'Lỗi khi xóa thiết bị!', 'error');
+      }
+    } catch (err) {
+      showToast('Lỗi kết nối khi xóa thiết bị!', 'error');
+    } finally {
+      setUpdatingProduct(false);
     }
   };
 
@@ -784,6 +931,118 @@ export default function App() {
       ...prev,
       items: prev.items.filter((_, i) => i !== index)
     }));
+  };
+
+  const updateQuoteItemQuantity = (index, newQty) => {
+    const qty = Math.max(1, parseInt(newQty) || 1);
+    setQuoteForm(prev => {
+      const newItems = [...prev.items];
+      newItems[index] = { ...newItems[index], quantity: qty };
+      return { ...prev, items: newItems };
+    });
+  };
+
+  const updateQuoteItemPrice = (index, newPrice) => {
+    const price = Math.max(0, parseInt(newPrice) || 0);
+    setQuoteForm(prev => {
+      const newItems = [...prev.items];
+      newItems[index] = { ...newItems[index], price: price };
+      return { ...prev, items: newItems };
+    });
+  };
+
+  const openEditQuote = (quote) => {
+    if (!quote) return;
+    const f = quote.fields || {};
+    setEditingQuote({
+      id: quote.id,
+      quote_code: f['Ma bao gia'] || quote.id,
+      project_name: f['Ten du an'] || '',
+      company_name: f['Ten cty Khach'] || f['Ten du an'] || '',
+      contact_name: f['Nguoi lien he'] || '',
+      phone: f['So dien thoai'] || '',
+      grand_total: f['Tong cong gia tri'] || 0,
+      status: f['Trang thai'] || 'Moi',
+      notes: f['Ghi chu'] || ''
+    });
+  };
+
+  const handleSaveEditedQuote = async (e) => {
+    if (e) e.preventDefault();
+    if (!editingQuote) return;
+    setUpdatingQuote(true);
+    try {
+      const res = await fetch(`${API_BASE}/quotes/${editingQuote.id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          project_name: editingQuote.project_name,
+          company_name: editingQuote.company_name,
+          contact_name: editingQuote.contact_name,
+          phone: editingQuote.phone,
+          status: editingQuote.status,
+          notes: editingQuote.notes,
+          grand_total: Number(String(editingQuote.grand_total || 0).replace(/\D/g, ''))
+        })
+      });
+      const data = await res.json();
+      if (res.ok && data.success) {
+        showToast(`Đã cập nhật báo giá ${editingQuote.quote_code}!`);
+        const updatedQuotes = quotes.map(q => {
+          if (q.id === editingQuote.id || q.fields?.['Ma bao gia'] === editingQuote.quote_code) {
+            return {
+              ...q,
+              fields: {
+                ...q.fields,
+                'Ten du an': editingQuote.project_name,
+                'Ten cty Khach': editingQuote.company_name,
+                'Nguoi lien he': editingQuote.contact_name,
+                'So dien thoai': editingQuote.phone,
+                'Trang thai': editingQuote.status,
+                'Ghi chu': editingQuote.notes,
+                'Tong cong gia tri': Number(String(editingQuote.grand_total || 0).replace(/\D/g, ''))
+              }
+            };
+          }
+          return q;
+        });
+        setQuotes(updatedQuotes);
+        try { localStorage.setItem('pt_quotes', JSON.stringify(updatedQuotes)); } catch {}
+        setEditingQuote(null);
+        fetchInitialData();
+      } else {
+        showToast(data.detail || 'Lỗi cập nhật báo giá!', 'error');
+      }
+    } catch (err) {
+      showToast('Lỗi kết nối cập nhật báo giá!', 'error');
+    } finally {
+      setUpdatingQuote(false);
+    }
+  };
+
+  const handleConfirmDeleteQuote = async () => {
+    if (!deletingQuote) return;
+    setUpdatingQuote(true);
+    try {
+      const res = await fetch(`${API_BASE}/quotes/${deletingQuote.id}`, {
+        method: 'DELETE'
+      });
+      const data = await res.json();
+      if (res.ok && data.success) {
+        showToast(`Đã xóa báo giá ${deletingQuote.quote_code || deletingQuote.id}!`);
+        const updatedQuotes = quotes.filter(q => q.id !== deletingQuote.id && q.fields?.['Ma bao gia'] !== deletingQuote.quote_code);
+        setQuotes(updatedQuotes);
+        try { localStorage.setItem('pt_quotes', JSON.stringify(updatedQuotes)); } catch {}
+        setDeletingQuote(null);
+        fetchInitialData();
+      } else {
+        showToast(data.detail || 'Lỗi khi xóa báo giá!', 'error');
+      }
+    } catch (err) {
+      showToast('Lỗi kết nối khi xóa báo giá!', 'error');
+    } finally {
+      setUpdatingQuote(false);
+    }
   };
 
   // Submit Quote
@@ -2065,10 +2324,55 @@ export default function App() {
                               borderRadius: 10,
                               border: '1px solid #E2E8F0',
                               cursor: 'pointer',
+                              position: 'relative',
                               transition: 'all 0.15s ease'
                             }}
                           >
-                            <div style={{ fontWeight: 700, fontSize: 13, color: '#0F172A' }}>{f['Ten SP']}</div>
+                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 6 }}>
+                              <div style={{ fontWeight: 700, fontSize: 13, color: '#0F172A', flex: 1 }}>{f['Ten SP']}</div>
+                              <div style={{ display: 'flex', gap: 4 }}>
+                                <button
+                                  type="button"
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    openEditProduct(p);
+                                  }}
+                                  title="Sửa thiết bị này"
+                                  style={{
+                                    background: '#EEF2F6',
+                                    border: 'none',
+                                    borderRadius: 4,
+                                    padding: '3px 6px',
+                                    cursor: 'pointer',
+                                    color: '#2563EB',
+                                    display: 'inline-flex',
+                                    alignItems: 'center'
+                                  }}
+                                >
+                                  <Pencil size={12} />
+                                </button>
+                                <button
+                                  type="button"
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    setDeletingProduct({ id: p.id, name: f['Ten SP'], sku: f['Ma SP'] });
+                                  }}
+                                  title="Xóa thiết bị này"
+                                  style={{
+                                    background: '#FEE2E2',
+                                    border: 'none',
+                                    borderRadius: 4,
+                                    padding: '3px 6px',
+                                    cursor: 'pointer',
+                                    color: '#DC2626',
+                                    display: 'inline-flex',
+                                    alignItems: 'center'
+                                  }}
+                                >
+                                  <Trash2 size={12} />
+                                </button>
+                              </div>
+                            </div>
                             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: 6 }}>
                               <span className="badge badge-red" style={{ fontSize: 10 }}>{f['Thuong hieu']}</span>
                               <span style={{ fontWeight: 800, color: '#D97706', fontSize: 13 }}>
@@ -2099,15 +2403,46 @@ export default function App() {
                         justifyContent: 'space-between',
                         padding: '10px 12px',
                         borderBottom: '1px solid #E2E8F0',
-                        fontSize: 13
+                        fontSize: 13,
+                        gap: 12
                       }}>
                         <div style={{ flex: 1 }}>
                           <div style={{ fontWeight: 700, color: '#0F172A' }}>{it.name}</div>
-                          <div style={{ color: '#64748B', fontSize: 11 }}>{it.price.toLocaleString('vi-VN')} đ × {it.quantity} {it.unit}</div>
+                          <div style={{ color: '#64748B', fontSize: 11, marginTop: 3 }}>
+                            {it.price.toLocaleString('vi-VN')} đ / {it.unit}
+                          </div>
                         </div>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-                          <span style={{ fontWeight: 700, color: '#0F172A' }}>{(it.price * it.quantity).toLocaleString('vi-VN')} đ</span>
-                          <button onClick={() => removeItemFromQuote(idx)} style={{ background: 'transparent', border: 'none', color: '#DC2626', cursor: 'pointer' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                          {/* Bộ chỉnh số lượng */}
+                          <div style={{ display: 'flex', alignItems: 'center', border: '1px solid #CBD5E1', borderRadius: 6, background: '#FFFFFF' }}>
+                            <button
+                              type="button"
+                              onClick={() => updateQuoteItemQuantity(idx, it.quantity - 1)}
+                              style={{ border: 'none', background: 'transparent', padding: '4px 7px', cursor: 'pointer', color: '#475569', display: 'flex', alignItems: 'center' }}
+                              title="Giảm số lượng"
+                            >
+                              <Minus size={12} />
+                            </button>
+                            <span style={{ minWidth: 24, textAlign: 'center', fontWeight: 700, fontSize: 12 }}>{it.quantity}</span>
+                            <button
+                              type="button"
+                              onClick={() => updateQuoteItemQuantity(idx, it.quantity + 1)}
+                              style={{ border: 'none', background: 'transparent', padding: '4px 7px', cursor: 'pointer', color: '#475569', display: 'flex', alignItems: 'center' }}
+                              title="Tăng số lượng"
+                            >
+                              <Plus size={12} />
+                            </button>
+                          </div>
+
+                          <span style={{ fontWeight: 700, color: '#0F172A', minWidth: 85, textAlign: 'right' }}>
+                            {(it.price * it.quantity).toLocaleString('vi-VN')} đ
+                          </span>
+                          <button
+                            type="button"
+                            onClick={() => removeItemFromQuote(idx)}
+                            style={{ background: 'transparent', border: 'none', color: '#DC2626', cursor: 'pointer', padding: 4 }}
+                            title="Xóa thiết bị này khỏi báo giá"
+                          >
                             <Trash2 size={15} />
                           </button>
                         </div>
@@ -2141,6 +2476,118 @@ export default function App() {
                 </button>
               </div>
 
+            </div>
+
+            {/* BẢNG DANH SÁCH BÁO GIÁ ĐÃ LẬP */}
+            <div className="white-card" style={{ padding: '24px 28px', marginTop: 24 }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 18 }}>
+                <div>
+                  <h3 style={{ fontSize: 16, fontWeight: 800, color: '#0F172A', margin: 0 }}>
+                    Danh Sách Báo Giá Đã Lập
+                  </h3>
+                  <p style={{ fontSize: 12.5, color: '#64748B', margin: '4px 0 0 0' }}>
+                    Tổng cộng <strong>{quotes.length} báo giá</strong> đã khởi tạo trên hệ thống
+                  </p>
+                </div>
+                <button onClick={fetchInitialData} className="btn-secondary" style={{ fontSize: 12, fontWeight: 600 }}>
+                  Làm mới
+                </button>
+              </div>
+
+              <div style={{ overflowX: 'auto', width: '100%' }}>
+                <table className="data-table" style={{ width: '100%', borderCollapse: 'collapse' }}>
+                  <thead>
+                    <tr>
+                      <th style={{ width: '18%', whiteSpace: 'nowrap' }}>Mã Báo Giá</th>
+                      <th style={{ width: '28%' }}>Dự Án / Khách Hàng</th>
+                      <th style={{ width: '18%' }}>Người Liên Hệ & SĐT</th>
+                      <th style={{ width: '14%', textAlign: 'right', whiteSpace: 'nowrap' }}>Tổng Cộng (VNĐ)</th>
+                      <th style={{ width: '10%', textAlign: 'center', whiteSpace: 'nowrap' }}>Trạng Thái</th>
+                      <th style={{ width: '12%', textAlign: 'center', whiteSpace: 'nowrap' }}>Thao Tác</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {quotes.length === 0 ? (
+                      <tr>
+                        <td colSpan={6} style={{ textAlign: 'center', padding: '30px', color: '#94A3B8' }}>
+                          Chưa có báo giá nào được lưu trên hệ thống.
+                        </td>
+                      </tr>
+                    ) : (
+                      quotes.map(q => {
+                        const f = q.fields || {};
+                        const maBg = f['Ma bao gia'] || q.id;
+                        return (
+                          <tr key={q.id}>
+                            <td style={{ fontWeight: 700, color: '#D31027', whiteSpace: 'nowrap' }}>
+                              {maBg}
+                            </td>
+                            <td>
+                              <strong style={{ color: '#0F172A', display: 'block', fontSize: 13.5 }}>
+                                {f['Ten du an'] || f['Ten cty Khach'] || 'Dự án âm thanh'}
+                              </strong>
+                              {f['Ten cty Khach'] && f['Ten cty Khach'] !== f['Ten du an'] && (
+                                <span style={{ fontSize: 11, color: '#64748B' }}>{f['Ten cty Khach']}</span>
+                              )}
+                            </td>
+                            <td style={{ color: '#475569' }}>
+                              <div>{f['Nguoi lien he'] || '—'}</div>
+                              {f['So dien thoai'] && (
+                                <div style={{ fontSize: 11.5, color: '#2563EB', fontWeight: 600 }}>{f['So dien thoai']}</div>
+                              )}
+                            </td>
+                            <td style={{ textAlign: 'right', fontWeight: 700, color: '#0F172A', whiteSpace: 'nowrap' }}>
+                              <div style={{ fontSize: 13.5 }}>{(f['Tong cong gia tri'] || 0).toLocaleString('vi-VN')} đ</div>
+                              {f['Ngay tao'] && (
+                                <span style={{ fontSize: 10, color: '#94A3B8', display: 'block', marginTop: 2 }}>
+                                  Ngày: {f['Ngay tao']}
+                                </span>
+                              )}
+                            </td>
+                            <td style={{ textAlign: 'center', whiteSpace: 'nowrap' }}>
+                              <span className={
+                                f['Trang thai'] === 'Da chot' || f['Trang thai'] === 'Won'
+                                  ? 'badge badge-green'
+                                  : (f['Trang thai'] === 'Huy' || f['Trang thai'] === 'Lost' ? 'badge badge-red' : 'badge badge-gold')
+                              }>
+                                {f['Trang thai'] || 'Mới'}
+                              </span>
+                            </td>
+                            <td style={{ textAlign: 'center', whiteSpace: 'nowrap' }}>
+                              <div style={{ display: 'inline-flex', gap: 6, alignItems: 'center' }}>
+                                <button
+                                  onClick={() => triggerDownload(`/api/v1/quotes/${maBg}/${maBg}.docx`, `${maBg}.docx`)}
+                                  className="btn-secondary"
+                                  style={{ padding: '5px 10px', fontSize: 11.5 }}
+                                  title="Tải văn bản Word"
+                                >
+                                  Tải .docx
+                                </button>
+                                <button
+                                  onClick={() => openEditQuote(q)}
+                                  className="btn-secondary"
+                                  style={{ padding: '5px 10px', fontSize: 11.5, color: '#2563EB', borderColor: '#BFDBFE', background: '#EFF6FF' }}
+                                  title="Sửa báo giá này"
+                                >
+                                  Sửa
+                                </button>
+                                <button
+                                  onClick={() => setDeletingQuote({ id: q.id, quote_code: maBg, company_name: f['Ten du an'] || f['Ten cty Khach'] })}
+                                  className="btn-secondary"
+                                  style={{ padding: '5px 10px', fontSize: 11.5, color: '#DC2626', borderColor: '#FECACA', background: '#FEF2F2' }}
+                                  title="Xóa báo giá này"
+                                >
+                                  Xóa
+                                </button>
+                              </div>
+                            </td>
+                          </tr>
+                        );
+                      })
+                    )}
+                  </tbody>
+                </table>
+              </div>
             </div>
 
             {/* Modal: Thêm Thiết Bị Mới Vào Bảng Giá & Kho */}
@@ -3410,23 +3857,41 @@ export default function App() {
                             </span>
                           </td>
                           <td style={{ padding: '12px 14px', textAlign: 'center' }}>
-                            <button
-                              onClick={() => {
-                                setTxForm({
-                                  product_id: it.sku,
-                                  product_name: it.name,
-                                  type: 'nhap',
-                                  quantity: it.min_threshold * 2,
-                                  reason: 'Nhập hàng dự trữ an toàn',
-                                  staff_name: 'Thủ kho Nguyễn Văn Nam'
-                                });
-                                setShowTxModal(true);
-                              }}
-                              className="btn-secondary"
-                              style={{ padding: '4px 10px', fontSize: 12 }}
-                            >
-                              Nhập/Xuất
-                            </button>
+                            <div style={{ display: 'inline-flex', gap: 6, alignItems: 'center', justifyContent: 'center' }}>
+                              <button
+                                onClick={() => {
+                                  setTxForm({
+                                    product_id: it.sku,
+                                    product_name: it.name,
+                                    type: 'nhap',
+                                    quantity: it.min_threshold * 2,
+                                    reason: 'Nhập hàng dự trữ an toàn',
+                                    staff_name: 'Thủ kho Nguyễn Văn Nam'
+                                  });
+                                  setShowTxModal(true);
+                                }}
+                                className="btn-secondary"
+                                style={{ padding: '4px 10px', fontSize: 12 }}
+                              >
+                                Nhập/Xuất
+                              </button>
+                              <button
+                                onClick={() => openEditProduct(it)}
+                                className="btn-secondary"
+                                style={{ padding: '4px 8px', fontSize: 12, color: '#2563EB', borderColor: '#BFDBFE', background: '#EFF6FF' }}
+                                title="Sửa thông tin thiết bị"
+                              >
+                                Sửa
+                              </button>
+                              <button
+                                onClick={() => setDeletingProduct({ id: it.id || it.sku, name: it.name, sku: it.sku })}
+                                className="btn-secondary"
+                                style={{ padding: '4px 8px', fontSize: 12, color: '#DC2626', borderColor: '#FECACA', background: '#FEF2F2' }}
+                                title="Xóa thiết bị khỏi kho"
+                              >
+                                Xóa
+                              </button>
+                            </div>
                           </td>
                         </tr>
                       ))}
@@ -3783,6 +4248,451 @@ export default function App() {
                 </div>
               </div>
 
+            </div>
+          </div>
+        )}
+
+        {/* MODAL: SỬA THIẾT BỊ / SẢN PHẨM */}
+        {editingProduct && (
+          <div style={{
+            position: 'fixed',
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            backgroundColor: 'rgba(15, 23, 42, 0.6)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            zIndex: 1000,
+            padding: 20
+          }}>
+            <div className="white-card" style={{ width: '100%', maxWidth: 560, padding: 26, boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.2)', maxHeight: '90vh', overflowY: 'auto' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 18, borderBottom: '1px solid #E2E8F0', paddingBottom: 12 }}>
+                <div>
+                  <h3 style={{ fontSize: 18, fontWeight: 800, color: '#0F172A', margin: 0 }}>Chỉnh Sửa Thiết Bị Âm Thanh</h3>
+                  <p style={{ fontSize: 12, color: '#64748B', margin: '4px 0 0 0' }}>Mã SKU: <strong style={{ color: '#D31027' }}>{editingProduct.sku || editingProduct.id}</strong></p>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setEditingProduct(null)}
+                  style={{ background: 'transparent', border: 'none', fontSize: 22, cursor: 'pointer', color: '#64748B' }}
+                >
+                  ×
+                </button>
+              </div>
+
+              <form onSubmit={handleSaveEditedProduct} style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+                <div>
+                  <label style={{ fontSize: 12, fontWeight: 700, color: '#334155', display: 'block', marginBottom: 4 }}>
+                    Tên Thiết Bị / Model *
+                  </label>
+                  <input
+                    className="input-field"
+                    value={editingProduct.name}
+                    onChange={e => setEditingProduct({ ...editingProduct, name: e.target.value })}
+                    required
+                  />
+                </div>
+
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+                  <div>
+                    <label style={{ fontSize: 12, fontWeight: 700, color: '#334155', display: 'block', marginBottom: 4 }}>
+                      Thương Hiệu
+                    </label>
+                    <select
+                      className="input-field"
+                      value={editingProduct.brand}
+                      onChange={e => setEditingProduct({ ...editingProduct, brand: e.target.value })}
+                    >
+                      {BRANDS.map(b => (
+                        <option key={b} value={b}>{b}</option>
+                      ))}
+                      <option value="Crown">Crown</option>
+                      <option value="JBL">JBL</option>
+                      <option value="Yamaha">Yamaha</option>
+                      <option value="Shure">Shure</option>
+                      <option value="Khác">Khác</option>
+                    </select>
+                  </div>
+
+                  <div>
+                    <label style={{ fontSize: 12, fontWeight: 700, color: '#334155', display: 'block', marginBottom: 4 }}>
+                      Phân Loại Thiết Bị
+                    </label>
+                    <select
+                      className="input-field"
+                      value={editingProduct.category}
+                      onChange={e => setEditingProduct({ ...editingProduct, category: e.target.value })}
+                    >
+                      <option value="Loa">Loa (Full, Sub, Line Array)</option>
+                      <option value="Cục đẩy công suất">Cục đẩy công suất (Main Amp)</option>
+                      <option value="Vang số / DSP">Vang số / DSP xử lý</option>
+                      <option value="Micro">Micro không dây / có dây</option>
+                      <option value="Mixer">Bàn Mixer / Bàn trộn</option>
+                      <option value="Phụ kiện">Phụ kiện & Quản lý nguồn</option>
+                    </select>
+                  </div>
+                </div>
+
+                <div style={{ display: 'grid', gridTemplateColumns: '1.2fr 0.8fr', gap: 12 }}>
+                  <div>
+                    <label style={{ fontSize: 12, fontWeight: 700, color: '#334155', display: 'block', marginBottom: 4 }}>
+                      Đơn Giá Bán (VNĐ) *
+                    </label>
+                    <input
+                      type="number"
+                      className="input-field"
+                      value={editingProduct.sale_price}
+                      onChange={e => setEditingProduct({ ...editingProduct, sale_price: e.target.value })}
+                      required
+                    />
+                  </div>
+
+                  <div>
+                    <label style={{ fontSize: 12, fontWeight: 700, color: '#334155', display: 'block', marginBottom: 4 }}>
+                      Đơn Vị Tính
+                    </label>
+                    <select
+                      className="input-field"
+                      value={editingProduct.unit}
+                      onChange={e => setEditingProduct({ ...editingProduct, unit: e.target.value })}
+                    >
+                      <option value="Cái">Cái</option>
+                      <option value="Cặp">Cặp</option>
+                      <option value="Bộ">Bộ</option>
+                      <option value="Hệ thống">Hệ thống</option>
+                    </select>
+                  </div>
+                </div>
+
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+                  <div>
+                    <label style={{ fontSize: 12, fontWeight: 700, color: '#334155', display: 'block', marginBottom: 4 }}>
+                      Giá Nhập TB (VNĐ)
+                    </label>
+                    <input
+                      type="number"
+                      className="input-field"
+                      value={editingProduct.import_price}
+                      onChange={e => setEditingProduct({ ...editingProduct, import_price: e.target.value })}
+                    />
+                  </div>
+
+                  <div>
+                    <label style={{ fontSize: 12, fontWeight: 700, color: '#334155', display: 'block', marginBottom: 4 }}>
+                      Số Lượng Tồn Kho
+                    </label>
+                    <input
+                      type="number"
+                      className="input-field"
+                      value={editingProduct.stock_quantity}
+                      onChange={e => setEditingProduct({ ...editingProduct, stock_quantity: e.target.value })}
+                    />
+                  </div>
+                </div>
+
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+                  <div>
+                    <label style={{ fontSize: 12, fontWeight: 700, color: '#334155', display: 'block', marginBottom: 4 }}>
+                      Ngưỡng Cảnh Báo Min
+                    </label>
+                    <input
+                      type="number"
+                      className="input-field"
+                      value={editingProduct.min_threshold}
+                      onChange={e => setEditingProduct({ ...editingProduct, min_threshold: e.target.value })}
+                    />
+                  </div>
+
+                  <div>
+                    <label style={{ fontSize: 12, fontWeight: 700, color: '#334155', display: 'block', marginBottom: 4 }}>
+                      Trạng Thái Kinh Doanh
+                    </label>
+                    <select
+                      className="input-field"
+                      value={editingProduct.status}
+                      onChange={e => setEditingProduct({ ...editingProduct, status: e.target.value })}
+                    >
+                      <option value="Dang kinh doanh">Đang kinh doanh</option>
+                      <option value="Tam ngung">Tạm ngưng</option>
+                      <option value="Het hang">Hết hàng</option>
+                    </select>
+                  </div>
+                </div>
+
+                <div>
+                  <label style={{ fontSize: 12, fontWeight: 700, color: '#334155', display: 'block', marginBottom: 4 }}>
+                    Mô Tả Kỹ Thuật / Ghi Chú
+                  </label>
+                  <input
+                    className="input-field"
+                    value={editingProduct.specs}
+                    onChange={e => setEditingProduct({ ...editingProduct, specs: e.target.value })}
+                  />
+                </div>
+
+                <div style={{ display: 'flex', gap: 10, marginTop: 10, justifyContent: 'flex-end' }}>
+                  <button
+                    type="button"
+                    onClick={() => setEditingProduct(null)}
+                    className="btn-secondary"
+                    style={{ padding: '8px 16px', fontSize: 13 }}
+                  >
+                    Hủy
+                  </button>
+                  <button
+                    type="submit"
+                    disabled={updatingProduct}
+                    className="btn-primary"
+                    style={{ padding: '8px 20px', fontSize: 13 }}
+                  >
+                    {updatingProduct ? 'Đang lưu...' : 'Lưu Thay Đổi'}
+                  </button>
+                </div>
+              </form>
+            </div>
+          </div>
+        )}
+
+        {/* MODAL: XÁC NHẬN XÓA THIẾT BỊ */}
+        {deletingProduct && (
+          <div style={{
+            position: 'fixed',
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            backgroundColor: 'rgba(15, 23, 42, 0.6)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            zIndex: 1000,
+            padding: 20
+          }}>
+            <div className="white-card" style={{ width: '100%', maxWidth: 450, padding: 24, boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.2)' }}>
+              <div style={{ textAlign: 'center', marginBottom: 16 }}>
+                <div style={{ width: 48, height: 48, borderRadius: '50%', background: '#FEE2E2', color: '#DC2626', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 12px', fontSize: 24 }}>
+                  ⚠️
+                </div>
+                <h3 style={{ fontSize: 18, fontWeight: 800, color: '#0F172A', margin: 0 }}>Xác Nhận Xóa Thiết Bị</h3>
+                <p style={{ fontSize: 13, color: '#64748B', marginTop: 8, lineHeight: 1.5 }}>
+                  Bạn có chắc chắn muốn xóa thiết bị <strong>"{deletingProduct.name}"</strong> ({deletingProduct.sku || deletingProduct.id}) khỏi danh mục và kho hàng không?
+                </p>
+              </div>
+              <div style={{ display: 'flex', gap: 10, justifyContent: 'center' }}>
+                <button
+                  type="button"
+                  onClick={() => setDeletingProduct(null)}
+                  className="btn-secondary"
+                  style={{ padding: '8px 18px', fontSize: 13 }}
+                  disabled={updatingProduct}
+                >
+                  Hủy Bỏ
+                </button>
+                <button
+                  type="button"
+                  onClick={handleConfirmDeleteProduct}
+                  className="btn-primary"
+                  style={{ padding: '8px 20px', fontSize: 13, background: '#DC2626', borderColor: '#DC2626' }}
+                  disabled={updatingProduct}
+                >
+                  {updatingProduct ? 'Đang xóa...' : 'Xóa Thiết Bị'}
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* MODAL: SỬA BÁO GIÁ */}
+        {editingQuote && (
+          <div style={{
+            position: 'fixed',
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            backgroundColor: 'rgba(15, 23, 42, 0.6)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            zIndex: 1000,
+            padding: 20
+          }}>
+            <div className="white-card" style={{ width: '100%', maxWidth: 540, padding: 26, boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.2)' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 18, borderBottom: '1px solid #E2E8F0', paddingBottom: 12 }}>
+                <div>
+                  <h3 style={{ fontSize: 18, fontWeight: 800, color: '#0F172A', margin: 0 }}>Chỉnh Sửa Thông Tin Báo Giá</h3>
+                  <p style={{ fontSize: 12, color: '#64748B', margin: '4px 0 0 0' }}>Mã: <strong style={{ color: '#D31027' }}>{editingQuote.quote_code}</strong></p>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setEditingQuote(null)}
+                  style={{ background: 'transparent', border: 'none', fontSize: 22, cursor: 'pointer', color: '#64748B' }}
+                >
+                  ×
+                </button>
+              </div>
+
+              <form onSubmit={handleSaveEditedQuote} style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+                <div>
+                  <label style={{ fontSize: 12, fontWeight: 700, color: '#334155', display: 'block', marginBottom: 4 }}>
+                    Tên Dự Án / Công Trình *
+                  </label>
+                  <input
+                    className="input-field"
+                    value={editingQuote.project_name}
+                    onChange={e => setEditingQuote({ ...editingQuote, project_name: e.target.value })}
+                    required
+                  />
+                </div>
+
+                <div>
+                  <label style={{ fontSize: 12, fontWeight: 700, color: '#334155', display: 'block', marginBottom: 4 }}>
+                    Tên Công Ty / Khách Hàng
+                  </label>
+                  <input
+                    className="input-field"
+                    value={editingQuote.company_name}
+                    onChange={e => setEditingQuote({ ...editingQuote, company_name: e.target.value })}
+                  />
+                </div>
+
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+                  <div>
+                    <label style={{ fontSize: 12, fontWeight: 700, color: '#334155', display: 'block', marginBottom: 4 }}>
+                      Người Liên Hệ
+                    </label>
+                    <input
+                      className="input-field"
+                      value={editingQuote.contact_name}
+                      onChange={e => setEditingQuote({ ...editingQuote, contact_name: e.target.value })}
+                    />
+                  </div>
+
+                  <div>
+                    <label style={{ fontSize: 12, fontWeight: 700, color: '#334155', display: 'block', marginBottom: 4 }}>
+                      Số Điện Thoại
+                    </label>
+                    <input
+                      className="input-field"
+                      value={editingQuote.phone}
+                      onChange={e => setEditingQuote({ ...editingQuote, phone: e.target.value })}
+                    />
+                  </div>
+                </div>
+
+                <div style={{ display: 'grid', gridTemplateColumns: '1.2fr 0.8fr', gap: 12 }}>
+                  <div>
+                    <label style={{ fontSize: 12, fontWeight: 700, color: '#334155', display: 'block', marginBottom: 4 }}>
+                      Tổng Giá Trị Báo Giá (VNĐ)
+                    </label>
+                    <input
+                      type="number"
+                      className="input-field"
+                      value={editingQuote.grand_total}
+                      onChange={e => setEditingQuote({ ...editingQuote, grand_total: e.target.value })}
+                    />
+                  </div>
+
+                  <div>
+                    <label style={{ fontSize: 12, fontWeight: 700, color: '#334155', display: 'block', marginBottom: 4 }}>
+                      Trạng Thái
+                    </label>
+                    <select
+                      className="input-field"
+                      value={editingQuote.status}
+                      onChange={e => setEditingQuote({ ...editingQuote, status: e.target.value })}
+                    >
+                      <option value="Moi">Mới khởi tạo</option>
+                      <option value="Da gui">Đã gửi khách</option>
+                      <option value="Dang dam phan">Đang đàm phán</option>
+                      <option value="Da chot">Đã chốt (Won)</option>
+                      <option value="Huy">Hủy / Thất bại</option>
+                    </select>
+                  </div>
+                </div>
+
+                <div>
+                  <label style={{ fontSize: 12, fontWeight: 700, color: '#334155', display: 'block', marginBottom: 4 }}>
+                    Ghi Chú
+                  </label>
+                  <input
+                    className="input-field"
+                    value={editingQuote.notes}
+                    onChange={e => setEditingQuote({ ...editingQuote, notes: e.target.value })}
+                    placeholder="Ghi chú điều khoản, bảo hành..."
+                  />
+                </div>
+
+                <div style={{ display: 'flex', gap: 10, marginTop: 10, justifyContent: 'flex-end' }}>
+                  <button
+                    type="button"
+                    onClick={() => setEditingQuote(null)}
+                    className="btn-secondary"
+                    style={{ padding: '8px 16px', fontSize: 13 }}
+                  >
+                    Hủy
+                  </button>
+                  <button
+                    type="submit"
+                    disabled={updatingQuote}
+                    className="btn-primary"
+                    style={{ padding: '8px 20px', fontSize: 13 }}
+                  >
+                    {updatingQuote ? 'Đang lưu...' : 'Lưu Thay Đổi'}
+                  </button>
+                </div>
+              </form>
+            </div>
+          </div>
+        )}
+
+        {/* MODAL: XÁC NHẬN XÓA BÁO GIÁ */}
+        {deletingQuote && (
+          <div style={{
+            position: 'fixed',
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            backgroundColor: 'rgba(15, 23, 42, 0.6)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            zIndex: 1000,
+            padding: 20
+          }}>
+            <div className="white-card" style={{ width: '100%', maxWidth: 450, padding: 24, boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.2)' }}>
+              <div style={{ textAlign: 'center', marginBottom: 16 }}>
+                <div style={{ width: 48, height: 48, borderRadius: '50%', background: '#FEE2E2', color: '#DC2626', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 12px', fontSize: 24 }}>
+                  ⚠️
+                </div>
+                <h3 style={{ fontSize: 18, fontWeight: 800, color: '#0F172A', margin: 0 }}>Xác Nhận Xóa Báo Giá</h3>
+                <p style={{ fontSize: 13, color: '#64748B', marginTop: 8, lineHeight: 1.5 }}>
+                  Bạn có chắc chắn muốn xóa báo giá <strong>{deletingQuote.quote_code}</strong> ({deletingQuote.company_name}) khỏi hệ thống không? Thao tác này không thể hoàn tác.
+                </p>
+              </div>
+              <div style={{ display: 'flex', gap: 10, justifyContent: 'center' }}>
+                <button
+                  type="button"
+                  onClick={() => setDeletingQuote(null)}
+                  className="btn-secondary"
+                  style={{ padding: '8px 18px', fontSize: 13 }}
+                  disabled={updatingQuote}
+                >
+                  Hủy Bỏ
+                </button>
+                <button
+                  type="button"
+                  onClick={handleConfirmDeleteQuote}
+                  className="btn-primary"
+                  style={{ padding: '8px 20px', fontSize: 13, background: '#DC2626', borderColor: '#DC2626' }}
+                  disabled={updatingQuote}
+                >
+                  {updatingQuote ? 'Đang xóa...' : 'Xóa Báo Giá'}
+                </button>
+              </div>
             </div>
           </div>
         )}

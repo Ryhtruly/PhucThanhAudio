@@ -84,6 +84,18 @@ class AirtableService:
         print(f"[Airtable Error] update_record {table_name}: {res.text}")
         return None
 
+    def delete_record(self, table_name: str, record_id: str) -> bool:
+        try:
+            url = f"{self._get_url(table_name)}/{record_id}"
+            res = requests.delete(url, headers=self.headers, timeout=15)
+            if res.status_code in (200, 204):
+                return True
+            print(f"[Airtable Error] delete_record {table_name}: {res.text}")
+            return False
+        except Exception as e:
+            print(f"[Airtable Exception] delete_record {table_name}: {e}")
+            return False
+
     # Helper queries
     def find_customer_by_phone(self, phone: str) -> Optional[Dict[str, Any]]:
         p = phone.strip()

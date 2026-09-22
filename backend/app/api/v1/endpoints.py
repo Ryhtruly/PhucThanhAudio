@@ -9,9 +9,9 @@ from fastapi import APIRouter, HTTPException
 from app.models.schemas import (
     AudioIntakeSubmitRequest,
     LeadStageUpdateRequest,
-    TaxLookupRequest, ContractCreateRequest, QuoteCreateRequest,
+    TaxLookupRequest, ContractCreateRequest, QuoteCreateRequest, QuoteUpdateRequest,
     LeadCreateRequest, WarrantyCreateRequest, ZBSSendRequest, InventoryTransactionRequest,
-    ProductCreateRequest
+    ProductCreateRequest, ProductUpdateRequest
 )
 from app.services.tax_service import lookup_tax_info
 from app.services.contract_service import create_contract
@@ -168,11 +168,16 @@ def api_list_quotes():
                 "id": q.id,
                 "fields": {
                     "Ma bao gia": q.quote_code,
-                    "Ten du an": q.company_name or "Trang bị âm thanh",
+                    "Ten du an": q.project_name or q.company_name or "Trang bị âm thanh",
+                    "Ten cty Khach": q.company_name or "",
                     "Nguoi lien he": q.contact_name or "",
                     "So dien thoai": q.phone or "",
                     "Tong cong gia tri": q.grand_total or 0,
-                    "Trang thai": q.status or "Moi"
+                    "Tien hang": q.subtotal or 0,
+                    "Tien thue VAT": q.vat_amount or 0,
+                    "Trang thai": q.status or "Moi",
+                    "Ghi chu": q.notes or "",
+                    "Ngay tao": q.created_at.strftime("%d/%m/%Y") if q.created_at else ""
                 }
             })
         db.close()
@@ -184,6 +189,134 @@ def api_list_quotes():
 
     redis_client.set("quotes_list", records, expire_seconds=300)
     return records
+
+@router.put("/quotes/{quote_id}")
+def api_update_quote(quote_id: str, req: QuoteUpdateRequest):
+    from app.core.database import SessionLocal
+    from app.models.db_models import Quote as DBQuote
+    db = SessionLocal()
+    updated_quote = None
+    try:
+        q = db.query(DBQuote).filter((DBQuote.id == quote_id) | (DBQuote.quote_code == quote_id)).first()
+        if not q:
+            raise HTTPException(status_code=404, detail="Không tìm thấy báo giá!")
+        
+        if req.project_name is not None:
+            q.project_name = req.project_name
+        if req.company_name is not None:
+            q.company_name = req.company_name
+        if req.contact_name is not None:
+            q.contact_name = req.contact_name
+        if req.phone is not None:
+            q.phone = req.phone
+        if req.email is not None:
+            q.email = req.email
+        if req.status is not None:
+            q.status = req.status
+        if req.notes is not None:
+            q.notes = req.notes
+        if req.valid_until is not None:
+            q.valid_until = req.valid_until
+        if req.grand_total is not None:
+            q.grand_total = req.grand_total
+
+        db.commit()
+        db.refresh(q)
+        updated_quote = {
+            "id": q.id,
+            "quote_code": q.quote_code,
+            "company_name": q.company_name,
+            "project_name": q.project_name,
+            "contact_name": q.contact_name,
+            "phone": q.phone,
+            "status": q.status,
+            "grand_total": q.grand_total,
+            "notes": q.notes
+        }
+
+        # Background sync to Airtable if applicable
+        import threading
+        def sync_quote_to_airtable(qid: str, qcode: str, fields_dict: dict):
+            try:
+                target_aid = qid if qid.startswith("rec") else None
+                if not target_aid:
+                    at_recs = airtable_client.list_records("Bao gia") or []
+                    for r in at_recs:
+                        if r.get("fields", {}).get("Ma bao gia") == qcode:
+                            target_aid = r.get("id")
+                            break
+                if target_aid:
+                    at_fields = {}
+                    if "company_name" in fields_dict: at_fields["Ten du an"] = fields_dict["company_name"]
+                    if "contact_name" in fields_dict: at_fields["Nguoi lien he"] = fields_dict["contact_name"]
+                    if "phone" in fields_dict: at_fields["So dien thoai"] = fields_dict["phone"]
+                    if "status" in fields_dict: at_fields["Trang thai"] = fields_dict["status"]
+                    if "grand_total" in fields_dict: at_fields["Tong cong gia tri"] = fields_dict["grand_total"]
+                    if at_fields:
+                        airtable_client.update_record("Bao gia", target_aid, at_fields)
+            except Exception as ae:
+                print(f"[Airtable update quote error]: {ae}")
+        
+        threading.Thread(
+            target=sync_quote_to_airtable,
+            args=(quote_id, q.quote_code, req.dict(exclude_unset=True)),
+            daemon=True
+        ).start()
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        db.rollback()
+        raise HTTPException(status_code=500, detail=f"Lỗi cập nhật báo giá: {e}")
+    finally:
+        db.close()
+
+    redis_client.delete("quotes_list")
+    redis_client.delete("kpi_summary")
+    return {"success": True, "quote": updated_quote, "message": "Cập nhật báo giá thành công!"}
+
+@router.delete("/quotes/{quote_id}")
+def api_delete_quote(quote_id: str):
+    from app.core.database import SessionLocal
+    from app.models.db_models import Quote as DBQuote, QuoteItem as DBQuoteItem
+    db = SessionLocal()
+    quote_code = None
+    try:
+        q = db.query(DBQuote).filter((DBQuote.id == quote_id) | (DBQuote.quote_code == quote_id)).first()
+        if q:
+            quote_code = q.quote_code
+            db.query(DBQuoteItem).filter(DBQuoteItem.quote_id == q.id).delete()
+            db.delete(q)
+            db.commit()
+        else:
+            quote_code = quote_id
+    except Exception as e:
+        db.rollback()
+        print(f"[DB Delete Quote Error]: {e}")
+    finally:
+        db.close()
+
+    # Delete from Airtable in background
+    import threading
+    def delete_quote_from_airtable(qid: str, qcode: Optional[str]):
+        try:
+            target_aid = qid if qid.startswith("rec") else None
+            if not target_aid and qcode:
+                at_recs = airtable_client.list_records("Bao gia") or []
+                for r in at_recs:
+                    if r.get("fields", {}).get("Ma bao gia") == qcode:
+                        target_aid = r.get("id")
+                        break
+            if target_aid:
+                airtable_client.delete_record("Bao gia", target_aid)
+        except Exception as ae:
+            print(f"[Airtable Delete Quote Error]: {ae}")
+
+    threading.Thread(target=delete_quote_from_airtable, args=(quote_id, quote_code), daemon=True).start()
+
+    redis_client.delete("quotes_list")
+    redis_client.delete("kpi_summary")
+    return {"success": True, "deleted_id": quote_id, "message": "Đã xóa báo giá thành công!"}
 
 # NV3: Lead & Pipeline
 @router.post("/leads")
@@ -439,6 +572,162 @@ def api_create_product(req: ProductCreateRequest):
         },
         "message": f"Đã thêm thiết bị '{name}' thành công!"
     }
+
+@router.put("/products/{product_id}")
+def api_update_product(product_id: str, req: ProductUpdateRequest):
+    from app.core.database import SessionLocal
+    from app.models.db_models import Product as DBProduct
+    db = SessionLocal()
+    updated = None
+    sku_val = None
+    try:
+        p = db.query(DBProduct).filter((DBProduct.id == product_id) | (DBProduct.sku == product_id)).first()
+        if not p:
+            if product_id.startswith("rec"):
+                at_prod = airtable_client.get_record("San pham & Bang gia", product_id)
+                if at_prod:
+                    f = at_prod.get("fields", {})
+                    p = DBProduct(
+                        id=product_id,
+                        sku=f.get("Ma SP") or f"PT-{product_id[-4:]}",
+                        name=f.get("Ten SP") or "Thiết bị",
+                        brand=f.get("Thuong hieu") or "Chính hãng",
+                        category=f.get("Nhom san pham") or "Loa",
+                        unit=f.get("Don vi tinh") or "Cái",
+                        sale_price=f.get("Don gia ban") or 0,
+                        import_price=f.get("Don gia nhap TB") or 0,
+                        stock_quantity=f.get("Ton kho") or 5,
+                        min_threshold=2,
+                        status="Dang kinh doanh"
+                    )
+                    db.add(p)
+                    db.commit()
+                    db.refresh(p)
+        if not p:
+            raise HTTPException(status_code=404, detail="Không tìm thấy thiết bị cần cập nhật!")
+
+        if req.name is not None and req.name.strip():
+            p.name = req.name.strip()
+        if req.brand is not None:
+            p.brand = req.brand
+        if req.category is not None:
+            p.category = req.category
+        if req.unit is not None:
+            p.unit = req.unit
+        if req.sale_price is not None:
+            p.sale_price = req.sale_price
+        if req.import_price is not None:
+            p.import_price = req.import_price
+        if req.stock_quantity is not None:
+            p.stock_quantity = req.stock_quantity
+        if req.min_threshold is not None:
+            p.min_threshold = req.min_threshold
+        if req.specs is not None:
+            p.specs = req.specs
+        if req.status is not None:
+            p.status = req.status
+
+        db.commit()
+        db.refresh(p)
+        sku_val = p.sku
+        updated = {
+            "id": p.id,
+            "fields": {
+                "Ten SP": p.name,
+                "Ma SP": p.sku,
+                "Thuong hieu": p.brand,
+                "Nhom san pham": p.category,
+                "Don vi tinh": p.unit,
+                "Don gia ban": p.sale_price,
+                "Don gia nhap TB": p.import_price,
+                "Ton kho": p.stock_quantity,
+                "Nguong ton min": p.min_threshold,
+                "Trang thai": p.status,
+                "Mo ta ky thuat": p.specs
+            }
+        }
+
+        # Background sync to Airtable
+        import threading
+        def sync_prod_to_airtable(pid: str, sku: str, req_data: dict):
+            try:
+                target_aid = pid if pid.startswith("rec") else None
+                if not target_aid:
+                    at_recs = airtable_client.list_records("San pham & Bang gia") or []
+                    for r in at_recs:
+                        if r.get("fields", {}).get("Ma SP") == sku:
+                            target_aid = r.get("id")
+                            break
+                if target_aid:
+                    at_fields = {}
+                    if "name" in req_data and req_data["name"]: at_fields["Ten SP"] = req_data["name"]
+                    if "sale_price" in req_data and req_data["sale_price"] is not None: at_fields["Don gia ban"] = req_data["sale_price"]
+                    if "import_price" in req_data and req_data["import_price"] is not None: at_fields["Don gia nhap TB"] = req_data["import_price"]
+                    if "stock_quantity" in req_data and req_data["stock_quantity"] is not None: at_fields["Ton kho"] = req_data["stock_quantity"]
+                    if "min_threshold" in req_data and req_data["min_threshold"] is not None: at_fields["Nguong ton min"] = req_data["min_threshold"]
+                    if "specs" in req_data and req_data["specs"]: at_fields["Mo ta ky thuat"] = req_data["specs"]
+                    if at_fields:
+                        airtable_client.update_record("San pham & Bang gia", target_aid, at_fields)
+            except Exception as ae:
+                print(f"[Airtable update product error]: {ae}")
+
+        threading.Thread(
+            target=sync_prod_to_airtable,
+            args=(product_id, sku_val, req.dict(exclude_unset=True)),
+            daemon=True
+        ).start()
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        db.rollback()
+        raise HTTPException(status_code=500, detail=f"Lỗi cập nhật thiết bị: {e}")
+    finally:
+        db.close()
+
+    redis_client.delete("products_list")
+    redis_client.delete("inventory_items")
+    return {"success": True, "product": updated, "message": "Cập nhật thiết bị thành công!"}
+
+@router.delete("/products/{product_id}")
+def api_delete_product(product_id: str):
+    from app.core.database import SessionLocal
+    from app.models.db_models import Product as DBProduct
+    db = SessionLocal()
+    sku_val = None
+    try:
+        p = db.query(DBProduct).filter((DBProduct.id == product_id) | (DBProduct.sku == product_id)).first()
+        if p:
+            sku_val = p.sku
+            db.delete(p)
+            db.commit()
+    except Exception as e:
+        db.rollback()
+        print(f"[DB Delete Product Error]: {e}")
+    finally:
+        db.close()
+
+    # Delete from Airtable in background
+    import threading
+    def delete_prod_from_airtable(pid: str, sku: Optional[str]):
+        try:
+            target_aid = pid if pid.startswith("rec") else None
+            if not target_aid and sku:
+                at_recs = airtable_client.list_records("San pham & Bang gia") or []
+                for r in at_recs:
+                    if r.get("fields", {}).get("Ma SP") == sku:
+                        target_aid = r.get("id")
+                        break
+            if target_aid:
+                airtable_client.delete_record("San pham & Bang gia", target_aid)
+        except Exception as ae:
+            print(f"[Airtable Delete Product Error]: {ae}")
+
+    threading.Thread(target=delete_prod_from_airtable, args=(product_id, sku_val), daemon=True).start()
+
+    redis_client.delete("products_list")
+    redis_client.delete("inventory_items")
+    return {"success": True, "deleted_id": product_id, "message": "Đã xóa thiết bị thành công!"}
 
 # NV7: KPI Dashboard
 @router.get("/kpi/summary")
