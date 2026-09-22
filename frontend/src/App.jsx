@@ -2,7 +2,10 @@ import PublicIntakePage from './pages/PublicIntakePage';
 import React, { useState, useEffect } from 'react';
 import { Trash2, Lock, Mail, LogOut, Eye, EyeOff, Pencil, Plus, Minus } from 'lucide-react';
 
-import { API_BASE, APP_TITLE, APP_SUBTITLE, COMPANY_NAME, COMPANY_ADDRESS, HOTLINE, ZALO_URL, getPublicIntakeUrl } from './config';
+import { 
+  API_BASE, APP_TITLE, APP_SUBTITLE, COMPANY_NAME, COMPANY_ADDRESS, 
+  HOTLINE, ZALO_URL, getPublicIntakeUrl, ADMIN_EMAIL, ADMIN_PASSWORD 
+} from './config';
 
 const BRANDS = [
   "LSS Advanced Speakers", "SR Made in Italy", "Studiomaster",
@@ -14,7 +17,7 @@ const DEFAULT_ACCOUNT = {
   id: 'admin',
   name: 'Phúc Thanh Audio',
   role: 'Quản Trị Viên',
-  email: 'admin@phucthanhaudio.vn',
+  email: ADMIN_EMAIL,
   avatar: 'PT'
 };
 
@@ -27,10 +30,12 @@ export default function App() {
     return <PublicIntakePage />;
   }
 
-  // Authentication State (Chỉ 1 tài khoản quản trị)
+  // Authentication State (Bắt buộc đăng nhập mỗi phiên làm việc mới)
   const [currentUser, setCurrentUser] = useState(() => {
     try {
-      const saved = localStorage.getItem('phucthanh_user_session');
+      // Dọn sạch phiên đăng nhập vĩnh viễn cũ trong localStorage để bắt buộc đăng nhập
+      localStorage.removeItem('phucthanh_user_session');
+      const saved = sessionStorage.getItem('phucthanh_admin_session');
       if (saved) {
         const parsed = JSON.parse(saved);
         if (!parsed.avatar || parsed.avatar === '👑' || parsed.avatar === '👤') {
@@ -66,22 +71,22 @@ export default function App() {
     setLoginLoading(true);
 
     setTimeout(() => {
-      // Kiểm tra thông tin đăng nhập
-      const isValidEmail = inputEmail === 'admin@phucthanhaudio.vn' || inputEmail === 'admin';
-      const isValidPassword = inputPass === 'PhucThanh@2026' || inputPass === 'admin123';
+      // Xác thực nghiêm ngặt tài khoản quản trị chính thức, không dùng mật khẩu yếu
+      const isValidEmail = inputEmail === (ADMIN_EMAIL || '').trim().toLowerCase();
+      const isValidPassword = inputPass === (ADMIN_PASSWORD || '').trim();
 
       if (!isValidEmail || !isValidPassword) {
         setLoginLoading(false);
-        setLoginError('Email hoặc mật khẩu không chính xác! Vui lòng thử lại.');
+        setLoginError('Email hoặc mật khẩu không chính xác! Vui lòng kiểm tra lại.');
         return;
       }
 
       const user = {
         ...DEFAULT_ACCOUNT,
-        email: 'admin@phucthanhaudio.vn'
+        email: ADMIN_EMAIL
       };
       setCurrentUser(user);
-      localStorage.setItem('phucthanh_user_session', JSON.stringify(user));
+      sessionStorage.setItem('phucthanh_admin_session', JSON.stringify(user));
       setLoginLoading(false);
       showToast(`Đăng nhập thành công: ${user.name}!`);
     }, 350);
@@ -89,6 +94,7 @@ export default function App() {
 
   const handleLogout = () => {
     setCurrentUser(null);
+    sessionStorage.removeItem('phucthanh_admin_session');
     localStorage.removeItem('phucthanh_user_session');
     showToast('Đã đăng xuất khỏi hệ thống');
   };
@@ -1291,11 +1297,11 @@ export default function App() {
               </div>
             </div>
 
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', fontSize: 12.5, color: '#475569' }}>
-              <label style={{ display: 'flex', alignItems: 'center', gap: 7, cursor: 'pointer' }}>
-                <input type="checkbox" defaultChecked style={{ accentColor: '#D31027' }} />
-                <span>Ghi nhớ phiên làm việc trên máy này</span>
-              </label>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', fontSize: 12, color: '#64748B', background: '#F8FAFC', padding: '8px 12px', borderRadius: 8, border: '1px solid #E2E8F0' }}>
+              <span style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                <Lock size={13} style={{ color: '#16A34A' }} />
+                <span>Phiên bảo mật cao • Yêu cầu đăng nhập mỗi phiên làm việc</span>
+              </span>
             </div>
 
             <button 

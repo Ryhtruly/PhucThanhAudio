@@ -15,9 +15,10 @@ Hệ thống được tách biệt rõ ràng giữa Cổng Giao diện Người 
   - Dành cho Giám đốc, Kế toán, Sales và Kỹ thuật viên truy cập làm việc trực tiếp trên trình duyệt.
   - Trang đăng ký tư vấn khách hàng công cộng: `https://phucthanhaudio.wiai.vn/intake`
 - **Dịch vụ Bộ nhớ đệm Redis:** Chạy nội bộ kết nối trực tiếp (`redis:6379`), tối ưu tốc độ phản hồi danh mục < 15ms.
-- **Tài khoản Đăng nhập Quản trị Web:**
-  - **Tài khoản / Email:** `admin@phucthanhaudio.vn` *(hoặc `admin`)*
-  - **Mật khẩu:** `PhucThanh@2026` *(hoặc `admin123`)*
+- **Bảo mật & Phân quyền Quản trị Web:**
+  - Cổng Quản trị yêu cầu xác thực phiên bảo mật (session-based) trước khi truy cập Dashboard.
+  - Thông tin tài khoản và mật khẩu quản trị được cấp phát riêng qua **Trình quản lý mật khẩu nội bộ** của công ty (không lưu trữ mật khẩu nhạy cảm trong tài liệu này).
+
 
 ---
 
