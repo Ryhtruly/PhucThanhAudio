@@ -80,3 +80,12 @@ Backend tự động tính thuế, tra cứu tên doanh nghiệp theo cổng thu
 
 - **Trợ lý xuất trực tiếp nội dung trong `blocks`** ra khung chat.
 - Cung cấp link tải file Word để nhân viên in ấn, trình ký hoặc gửi đối tác.
+
+---
+
+## 5. Tra Cứu Danh Sách Hợp Đồng (List Contracts)
+
+- **Endpoint:** `GET https://apiphucthanhaudio.wiai.vn/api/v1/contracts`
+- **Method:** `GET`
+- **Mô tả:** Trả về danh sách tất cả các hợp đồng kinh tế đã tạo (mã HĐ, tên khách hàng/pháp nhân, giá trị, ngày tạo, trạng thái, đường dẫn tải file `.docx`).
+

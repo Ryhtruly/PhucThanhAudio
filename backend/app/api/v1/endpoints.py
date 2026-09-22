@@ -577,32 +577,60 @@ def api_create_product(req: ProductCreateRequest):
 def api_update_product(product_id: str, req: ProductUpdateRequest):
     from app.core.database import SessionLocal
     from app.models.db_models import Product as DBProduct
+    from sqlalchemy import func
     db = SessionLocal()
     updated = None
     sku_val = None
+    clean_id = product_id.strip()
+    clean_id_lower = clean_id.lower()
     try:
-        p = db.query(DBProduct).filter((DBProduct.id == product_id) | (DBProduct.sku == product_id)).first()
+        p = db.query(DBProduct).filter(
+            (DBProduct.id == clean_id) |
+            (DBProduct.sku == clean_id) |
+            (func.lower(DBProduct.sku) == clean_id_lower) |
+            (func.lower(DBProduct.id) == clean_id_lower)
+        ).first()
+
         if not p:
-            if product_id.startswith("rec"):
-                at_prod = airtable_client.get_record("San pham & Bang gia", product_id)
-                if at_prod:
-                    f = at_prod.get("fields", {})
-                    p = DBProduct(
-                        id=product_id,
-                        sku=f.get("Ma SP") or f"PT-{product_id[-4:]}",
-                        name=f.get("Ten SP") or "Thiết bị",
-                        brand=f.get("Thuong hieu") or "Chính hãng",
-                        category=f.get("Nhom san pham") or "Loa",
-                        unit=f.get("Don vi tinh") or "Cái",
-                        sale_price=f.get("Don gia ban") or 0,
-                        import_price=f.get("Don gia nhap TB") or 0,
-                        stock_quantity=f.get("Ton kho") or 5,
-                        min_threshold=2,
-                        status="Dang kinh doanh"
-                    )
-                    db.add(p)
-                    db.commit()
-                    db.refresh(p)
+            at_prod = None
+            if clean_id.startswith("rec"):
+                at_prod = airtable_client.get_record("San pham & Bang gia", clean_id)
+
+            if not at_prod:
+                at_recs = airtable_client.list_records("San pham & Bang gia") or []
+                for r in at_recs:
+                    r_id = r.get("id", "")
+                    r_sku = str(r.get("fields", {}).get("Ma SP", "")).strip().lower()
+                    if r_id == clean_id or r_sku == clean_id_lower:
+                        at_prod = r
+                        break
+
+            if at_prod:
+                f = at_prod.get("fields", {})
+                rec_id = at_prod.get("id") or clean_id
+                rec_sku = f.get("Ma SP") or (clean_id if not clean_id.startswith("rec") else f"PT-{clean_id[-4:]}")
+                p = DBProduct(
+                    id=rec_id,
+                    sku=rec_sku,
+                    name=f.get("Ten SP") or "Thiết bị",
+                    brand=f.get("Thuong hieu") or "Chính hãng",
+                    category=f.get("Nhom san pham") or "Loa",
+                    unit=f.get("Don vi tinh") or "Cái",
+                    sale_price=f.get("Don gia ban") or 0,
+                    import_price=f.get("Don gia nhap TB") or 0,
+                    stock_quantity=f.get("Ton kho") if f.get("Ton kho") is not None else 5,
+                    min_threshold=f.get("Nguong ton min") if f.get("Nguong ton min") is not None else 2,
+                    specs=f.get("Mo ta ky thuat") or "",
+                    status=f.get("Trang thai") or "Dang kinh doanh"
+                )
+                db.merge(p)
+                db.commit()
+                p = db.query(DBProduct).filter(
+                    (DBProduct.id == rec_id) |
+                    (DBProduct.sku == rec_sku) |
+                    (func.lower(DBProduct.sku) == clean_id_lower)
+                ).first()
+
         if not p:
             raise HTTPException(status_code=404, detail="Không tìm thấy thiết bị cần cập nhật!")
 
@@ -649,23 +677,29 @@ def api_update_product(product_id: str, req: ProductUpdateRequest):
 
         # Background sync to Airtable
         import threading
-        def sync_prod_to_airtable(pid: str, sku: str, req_data: dict):
+        def sync_prod_to_airtable(pid: str, sku: Optional[str], req_data: dict):
             try:
                 target_aid = pid if pid.startswith("rec") else None
                 if not target_aid:
                     at_recs = airtable_client.list_records("San pham & Bang gia") or []
                     for r in at_recs:
-                        if r.get("fields", {}).get("Ma SP") == sku:
-                            target_aid = r.get("id")
+                        r_id = r.get("id")
+                        r_sku = str(r.get("fields", {}).get("Ma SP", "")).strip().lower()
+                        if r_id == pid or (sku and r_sku == sku.strip().lower()) or (pid and r_sku == pid.strip().lower()):
+                            target_aid = r_id
                             break
                 if target_aid:
                     at_fields = {}
                     if "name" in req_data and req_data["name"]: at_fields["Ten SP"] = req_data["name"]
+                    if "brand" in req_data and req_data["brand"]: at_fields["Thuong hieu"] = req_data["brand"]
+                    if "category" in req_data and req_data["category"]: at_fields["Nhom san pham"] = req_data["category"]
+                    if "unit" in req_data and req_data["unit"]: at_fields["Don vi tinh"] = req_data["unit"]
                     if "sale_price" in req_data and req_data["sale_price"] is not None: at_fields["Don gia ban"] = req_data["sale_price"]
                     if "import_price" in req_data and req_data["import_price"] is not None: at_fields["Don gia nhap TB"] = req_data["import_price"]
                     if "stock_quantity" in req_data and req_data["stock_quantity"] is not None: at_fields["Ton kho"] = req_data["stock_quantity"]
                     if "min_threshold" in req_data and req_data["min_threshold"] is not None: at_fields["Nguong ton min"] = req_data["min_threshold"]
                     if "specs" in req_data and req_data["specs"]: at_fields["Mo ta ky thuat"] = req_data["specs"]
+                    if "status" in req_data and req_data["status"]: at_fields["Trang thai"] = req_data["status"]
                     if at_fields:
                         airtable_client.update_record("San pham & Bang gia", target_aid, at_fields)
             except Exception as ae:
@@ -673,7 +707,7 @@ def api_update_product(product_id: str, req: ProductUpdateRequest):
 
         threading.Thread(
             target=sync_prod_to_airtable,
-            args=(product_id, sku_val, req.dict(exclude_unset=True)),
+            args=(clean_id, sku_val, req.dict(exclude_unset=True)),
             daemon=True
         ).start()
 
@@ -693,10 +727,18 @@ def api_update_product(product_id: str, req: ProductUpdateRequest):
 def api_delete_product(product_id: str):
     from app.core.database import SessionLocal
     from app.models.db_models import Product as DBProduct
+    from sqlalchemy import func
     db = SessionLocal()
     sku_val = None
+    clean_id = product_id.strip()
+    clean_id_lower = clean_id.lower()
     try:
-        p = db.query(DBProduct).filter((DBProduct.id == product_id) | (DBProduct.sku == product_id)).first()
+        p = db.query(DBProduct).filter(
+            (DBProduct.id == clean_id) |
+            (DBProduct.sku == clean_id) |
+            (func.lower(DBProduct.sku) == clean_id_lower) |
+            (func.lower(DBProduct.id) == clean_id_lower)
+        ).first()
         if p:
             sku_val = p.sku
             db.delete(p)
@@ -712,22 +754,24 @@ def api_delete_product(product_id: str):
     def delete_prod_from_airtable(pid: str, sku: Optional[str]):
         try:
             target_aid = pid if pid.startswith("rec") else None
-            if not target_aid and sku:
+            if not target_aid:
                 at_recs = airtable_client.list_records("San pham & Bang gia") or []
                 for r in at_recs:
-                    if r.get("fields", {}).get("Ma SP") == sku:
-                        target_aid = r.get("id")
+                    r_id = r.get("id")
+                    r_sku = str(r.get("fields", {}).get("Ma SP", "")).strip().lower()
+                    if r_id == pid or (sku and r_sku == sku.strip().lower()) or (pid and r_sku == pid.strip().lower()):
+                        target_aid = r_id
                         break
             if target_aid:
                 airtable_client.delete_record("San pham & Bang gia", target_aid)
         except Exception as ae:
             print(f"[Airtable Delete Product Error]: {ae}")
 
-    threading.Thread(target=delete_prod_from_airtable, args=(product_id, sku_val), daemon=True).start()
+    threading.Thread(target=delete_prod_from_airtable, args=(clean_id, sku_val), daemon=True).start()
 
     redis_client.delete("products_list")
     redis_client.delete("inventory_items")
-    return {"success": True, "deleted_id": product_id, "message": "Đã xóa thiết bị thành công!"}
+    return {"success": True, "deleted_id": clean_id, "message": "Đã xóa thiết bị thành công!"}
 
 # NV7: KPI Dashboard
 @router.get("/kpi/summary")

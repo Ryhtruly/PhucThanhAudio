@@ -82,3 +82,22 @@ Tất cả các endpoint tích hợp đều trả về định dạng JSON đồ
 | [**nv6-inventory**](./nv6-inventory/SKILL.md) | Quản Lý Kho & Cảnh Báo Hàng Dự Trữ | `https://apiphucthanhaudio.wiai.vn/api/nv6/stock/check` | `GET` | Thủ Kho, Kế Hoạch Cung Ứng |
 | [**nv7-kpi**](./nv7-kpi/SKILL.md) | Tổng Quan Điều Hành & Báo Cáo Doanh Thu | `https://apiphucthanhaudio.wiai.vn/api/nv7/kpi/report` | `GET` | Ban Giám Đốc, CEO |
 | [**nv8-intake**](./nv8-intake/SKILL.md) | Cổng Tiếp Nhận Đăng Ký Tư Vấn & Báo Giá | `https://apiphucthanhaudio.wiai.vn/api/nv8/intake`<br>`https://apiphucthanhaudio.wiai.vn/api/nv8/intake/solutions` | `POST`<br>`GET` | Khách Hàng, Tiếp Nhận Dự Án |
+
+---
+
+## 6. Danh Mục Endpoint RESTful V1 Tra Cứu & Thao Tác Nhanh
+
+Các endpoint V1 phục vụ tra cứu danh sách, tạo/sửa/xóa trực tiếp từ Frontend hoặc hệ thống tích hợp:
+
+| Thực Thể / Nghiệp Vụ | Endpoint V1 | Method | Chức Năng |
+|---|---|---|---|
+| **Hợp Đồng** | `/api/v1/contracts` | `GET` | Lấy danh sách toàn bộ hợp đồng kinh tế |
+| **Báo Giá** | `/api/v1/quotes` | `GET` | Lấy danh sách toàn bộ bảng báo giá |
+| **Báo Giá** | `/api/v1/quotes/{id}` | `PUT` / `DELETE` | Chỉnh sửa / Xóa báo giá dự án |
+| **Leads & Cơ Hội** | `/api/v1/leads` | `GET` | Lấy danh sách toàn bộ Leads trong pipeline |
+| **Thiết Bị / Sản Phẩm** | `/api/v1/products` | `GET` | Lấy danh mục sản phẩm và bảng giá |
+| **Thiết Bị / Sản Phẩm** | `/api/v1/products/{sku_or_id}` | `PUT` / `DELETE` | Sửa / Xóa thiết bị (hỗ trợ cả SKU lẫn Record ID) |
+| **Phiếu Bảo Hành (RMA)** | `/api/v1/warranties` | `GET` | Lấy danh sách phiếu tiếp nhận bảo hành |
+| **Tồn Kho & Cảnh Báo** | `/api/v1/inventory/items` | `GET` | Báo cáo chi tiết tồn kho từng mã hàng |
+| **Giao Dịch Kho** | `/api/v1/inventory/transaction` | `POST` | Ghi nhận phiếu nhập/xuất kho thiết bị |
+

@@ -119,6 +119,10 @@ Khi người dùng yêu cầu bổ sung thiết bị mới vào danh mục bản
 
 ## 6. Chỉnh Sửa & Xóa Báo Giá (Edit / Delete Quote)
 
+### Tra cứu danh sách báo giá:
+- **Endpoint:** `GET https://apiphucthanhaudio.wiai.vn/api/v1/quotes`
+- **Mô tả:** Trả về danh sách toàn bộ các báo giá dự án (kèm danh sách thiết bị chi tiết, tổng tiền, chiết khấu, VAT, trạng thái).
+
 ### Chỉnh sửa thông tin báo giá:
 - **Endpoint:** `PUT https://apiphucthanhaudio.wiai.vn/api/v1/quotes/{quote_id}`
 - **Body Mẫu:**
@@ -140,9 +144,18 @@ Khi người dùng yêu cầu bổ sung thiết bị mới vào danh mục bản
 
 ---
 
-## 7. Chỉnh Sửa & Xóa Thiết Bị (Edit / Delete Product)
+## 7. Tra Cứu, Chỉnh Sửa & Xóa Thiết Bị (Product CRUD)
 
-- **Cập nhật thiết bị:** `PUT https://apiphucthanhaudio.wiai.vn/api/v1/products/{product_id}`
-  - Cho phép sửa: `name`, `brand`, `category`, `unit`, `sale_price`, `import_price`, `stock_quantity`, `min_threshold`, `specs`, `status`.
-- **Xóa thiết bị:** `DELETE https://apiphucthanhaudio.wiai.vn/api/v1/products/{product_id}`
-  - Tự động xóa thiết bị khỏi bảng giá và kho hàng trong CSDL SQLite + đồng bộ xóa trên Airtable.
+### Tra cứu danh mục sản phẩm:
+- **Endpoint:** `GET https://apiphucthanhaudio.wiai.vn/api/v1/products`
+- **Mô tả:** Trả về danh sách toàn bộ thiết bị trong bảng giá và kho hàng.
+
+### Cập nhật thiết bị:
+- **Endpoint:** `PUT https://apiphucthanhaudio.wiai.vn/api/v1/products/{product_id}`
+- **Ghi chú tham số `{product_id}`:** Hỗ trợ linh hoạt cả **Mã SKU** (ví dụ: `SP-AMP-003`, `PT-9616`), **Mã Record ID Airtable** (`rec...`), không phân biệt chữ hoa/thường.
+- Cho phép sửa: `name`, `brand`, `category`, `unit`, `sale_price`, `import_price`, `stock_quantity`, `min_threshold`, `specs`, `status`.
+
+### Xóa thiết bị:
+- **Endpoint:** `DELETE https://apiphucthanhaudio.wiai.vn/api/v1/products/{product_id}`
+- Hỗ trợ truyền mã SKU hoặc Record ID. Tự động xóa thiết bị khỏi bảng giá và kho hàng trong CSDL SQLite + đồng bộ xóa trên Airtable bảng `San pham & Bang gia`.
+

@@ -96,3 +96,12 @@ Khi chuyển sang `Won`, hệ thống sẽ:
 }
 ```
 Mọi thay đổi trạng thái sẽ đồng thời tự động xóa cache Redis (`leads_list_v1`, `kpi_summary`, `contracts_list`) để giao diện Web tại `https://phucthanhaudio.wiai.vn/` cập nhật tức thì.
+ 
+---
+
+## 3. Tra Cứu Danh Sách Leads & Cơ Hội Bán Hàng (List Leads)
+
+- **Endpoint:** `GET https://apiphucthanhaudio.wiai.vn/api/v1/leads`
+- **Method:** `GET`
+- **Mô tả:** Trả về toàn bộ danh sách khách hàng tiềm năng, cơ hội bán hàng, giai đoạn (`New`, `Qualified`, `Dam phan`, `Won`, `Lost`), điểm Lead Score và dự toán.
+
