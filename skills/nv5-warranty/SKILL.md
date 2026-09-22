@@ -9,6 +9,24 @@ Skill này giúp Kỹ thuật viên (KTV), lễ tân dịch vụ hoặc khách h
 
 ---
 
+## 📌 Các Nguồn Đầu Vào Dữ Liệu (Input Channels)
+
+Hệ thống tiếp nhận yêu cầu Dịch vụ kỹ thuật & Bảo hành thiết bị từ **4 kênh chính**:
+
+1. **Kênh 1: Trợ lý AI qua Hội thoại Chat (Bot / Zalo OA / Hotline)**:
+   - Tiếp nhận câu nói tự nhiên từ khách hoặc KTV: *"Amply quán King Club bị rè kênh trái, khách báo gấp ở Q.1, SĐT 0903112233"*.
+   - Bot tự động gọi `POST https://apiphucthanhaudio.wiai.vn/api/nv5/warranty/start`.
+2. **Kênh 2: Cổng tiếp nhận dịch vụ & giải pháp trực tuyến (`/intake`)**:
+   - Khách hàng truy cập `https://phucthanhaudio.wiai.vn/intake` điền biểu mẫu nhu cầu lắp mới hoặc bảo trì, nâng cấp thiết bị âm thanh.
+   - Dữ liệu chuyển vào Pipeline CRM qua `POST /api/v1/intake/submit`.
+3. **Kênh 3: REST API Trực Tiếp**:
+   - `POST https://apiphucthanhaudio.wiai.vn/api/v1/warranties`: Tạo phiếu bảo hành mới trực tiếp từ bên thứ ba hoặc hệ thống khác.
+   - `GET https://apiphucthanhaudio.wiai.vn/api/v1/warranties`: Lấy danh sách toàn bộ phiếu RMA.
+4. **Kênh 4: Giao diện Web Quản Trị**:
+   - Tab **"Dịch Vụ & Bảo Hành"** tại `https://phucthanhaudio.wiai.vn/` hiển thị bảng phiếu RMA theo thời gian thực và cho phép gửi tin Zalo ZNS thông báo lịch hẹn.
+
+---
+
 ## Nghiệp Vụ 1: Tiếp Nhận Bảo Hành / Sự Cố (Start Warranty / RMA)
 
 ### Khi Nào Kích Hoạt?
@@ -18,7 +36,7 @@ Khi có thông báo lỗi kỹ thuật hoặc yêu cầu bảo hành:
 - *"Khách hàng báo vang số Digisynthetic mất nguồn, cần thợ qua kiểm tra"*
 
 ### Gọi Backend API:
-- **Endpoint:** `POST https://apiphucthanhaudio.wiai.vn/api/nv5/warranty/start`
+- **Endpoint:** `POST https://apiphucthanhaudio.wiai.vn/api/nv5/warranty/start` (hoặc `POST https://apiphucthanhaudio.wiai.vn/api/v1/warranties`)
 - **Headers:**
   - `Content-Type: application/json`
   - `ngrok-skip-browser-warning: true`

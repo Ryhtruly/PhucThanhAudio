@@ -70,3 +70,44 @@ Khi người dùng (Thủ kho, Quản lý) muốn bổ sung một thiết bị m
   }
   ```
 Backend tự động cấp mã SKU (`PT-xxxx`), lưu vào CSDL SQLite nội bộ, xóa cache Redis và đồng bộ lên bảng giá Airtable. Thiết bị hiển thị tức thì trên Web Quản Trị tại `https://phucthanhaudio.wiai.vn/`.
+
+---
+
+## 5. Chỉnh Sửa & Xóa Thiết Bị Trong Kho (Edit / Delete Stock Item)
+
+### Cập nhật thông số kỹ thuật, giá hoặc mức tồn an toàn:
+- **Endpoint:** `PUT https://apiphucthanhaudio.wiai.vn/api/v1/products/{product_id_hoac_sku}`
+- **Method:** `PUT`
+- **Body Mẫu:**
+  ```json
+  {
+    "name": "Loa Line Array SR HR-12 (Bản nâng cấp)",
+    "stock_quantity": 15,
+    "min_threshold": 3,
+    "sale_price": 36000000,
+    "import_price": 28000000,
+    "status": "Dang kinh doanh"
+  }
+  ```
+
+### Xóa thiết bị khỏi kho và bảng giá:
+- **Endpoint:** `DELETE https://apiphucthanhaudio.wiai.vn/api/v1/products/{product_id_hoac_sku}`
+- Tự động xóa trong SQLite + đồng bộ xóa trên Airtable bảng `San pham & Bang gia`, xóa cache Redis `inventory_items` và `products_list`.
+
+---
+
+## 6. Giao Dịch Nhập / Xuất Kho Nhanh (Stock Transaction)
+
+- **Endpoint:** `POST https://apiphucthanhaudio.wiai.vn/api/v1/inventory/transaction`
+- **Body Mẫu:**
+  ```json
+  {
+    "product_id": "PT-4149",
+    "product_name": "Loa Line Array SR HR-12",
+    "type": "nhap",
+    "quantity": 10,
+    "reason": "Nhập hàng bổ sung dự trữ an toàn",
+    "staff_name": "Thủ kho Nguyễn Văn Nam"
+  }
+  ```
+- Tự động điều chỉnh số lượng `stock_quantity`, kiểm tra ngưỡng cảnh báo min và lưu nhật ký giao dịch kho.

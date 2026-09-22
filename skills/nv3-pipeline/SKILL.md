@@ -59,11 +59,11 @@ Khi nhân viên kinh doanh thông báo tiến trình giao dịch:
 - `New`: **Tiếp Nhận Ban Đầu** (Khách hàng gửi thông tin/đăng ký)
 - `Qualified`: **Khảo Sát Hiện Trạng** (Đã khảo sát thực địa & tư vấn giải pháp)
 - `Dam phan`: **Đàm Phán & Báo Giá** (Đang thương thảo điều khoản/bảng giá)
-- `Won`: **Ký Kết Hợp Đồng** (Hoàn tất ký hợp đồng kinh tế)
+- `Won`: **Ký Kết Hợp Đồng** (Hoàn tất chốt hợp đồng — **Hệ thống tự động khởi tạo Hợp đồng kinh tế và xuất file Word .docx**)
 - `Lost`: **Thất Bại / Hủy Bỏ** (Dự án dừng hoặc khách hủy)
 
 ### Gọi API Backend:
-- **Endpoint:** `PUT https://apiphucthanhaudio.wiai.vn/api/nv3/deal/{deal_id_hoac_sdt}`
+- **Endpoint:** `PUT https://apiphucthanhaudio.wiai.vn/api/nv3/deal/{deal_id_hoac_sdt}` (hoặc `PATCH https://apiphucthanhaudio.wiai.vn/api/v1/leads/{lead_id}/stage`)
 - **Headers:**
   - `Content-Type: application/json`
   - `ngrok-skip-browser-warning: true`
@@ -76,16 +76,23 @@ Khi nhân viên kinh doanh thông báo tiến trình giao dịch:
 ```
 
 ### Phản Hồi Từ Hệ Thống:
+Khi chuyển sang `Won`, hệ thống sẽ:
+1. Cập nhật trạng thái lead trong SQLite và Airtable.
+2. Tự động gọi hàm `auto_create_contract_for_won_lead` để sinh mã hợp đồng kinh tế (ví dụ: `HD-20260917-085304695`).
+3. Sinh file Word `.docx` chuẩn mẫu hợp đồng kinh tế Phúc Thanh Audio.
+4. Cập nhật ngay vào tab **Quản Lý Hợp Đồng** và biểu đồ **KPI Doanh Thu** trên Web Quản Trị `https://phucthanhaudio.wiai.vn/`.
+
 ```json
 {
   "action": "ANSWER",
   "blocks": [
     "🎯 **Cập nhật trạng thái cơ hội thành công!**",
     "• **Mã Khách Hàng:** `0908123456`",
-    "• **Giai đoạn mới:** Ký Kết Hợp Đồng",
-    "👉 *Cơ hội đã hoàn tất, bạn có thể gọi NV1 để khởi tạo Hợp đồng kinh tế ngay!*"
+    "• **Giai đoạn mới:** Ký Kết Hợp Đồng (Won)",
+    "• **Mã Hợp Đồng Tự Động Sinh:** `HD-20260917-085304695`",
+    "• **Tài liệu Hợp đồng:** Đã kết xuất file Word .docx và lưu trữ trên hệ thống"
   ],
-  "data": { "deal_id": "0908123456", "stage": "Won", "updated": true }
+  "data": { "deal_id": "0908123456", "stage": "Won", "created_contract_code": "HD-20260917-085304695" }
 }
 ```
-Mọi thay đổi trạng thái sẽ đồng thời tự động xóa cache Redis (`leads_list_v1`) để giao diện Web tại `https://phucthanhaudio.wiai.vn/` cập nhật tức thì.
+Mọi thay đổi trạng thái sẽ đồng thời tự động xóa cache Redis (`leads_list_v1`, `kpi_summary`, `contracts_list`) để giao diện Web tại `https://phucthanhaudio.wiai.vn/` cập nhật tức thì.

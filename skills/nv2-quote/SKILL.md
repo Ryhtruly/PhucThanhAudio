@@ -100,7 +100,7 @@ Backend tự động sinh mã báo giá kèm mili-giây chuẩn xác (ví dụ: 
 ## 5. Thêm Thiết Bị Mới Vào Bảng Giá Qua Chat
 
 Khi người dùng yêu cầu bổ sung thiết bị mới vào danh mục bảng giá (ví dụ: *"Thêm sản phẩm Loa Subwoofer SR SW-218 giá 45 triệu"*):
-- **Endpoint:** `POST https://apiphucthanhaudio.wiai.vn/api/nv2/product`
+- **Endpoint:** `POST https://apiphucthanhaudio.wiai.vn/api/nv2/product` (hoặc `POST https://apiphucthanhaudio.wiai.vn/api/v1/products`)
 - **Method:** `POST`
 - **Body Mẫu:**
   ```json
@@ -114,3 +114,35 @@ Khi người dùng yêu cầu bổ sung thiết bị mới vào danh mục bản
   }
   ```
 - Backend sẽ tự động lưu vào Cơ sở dữ liệu SQLite (`phucthanh.db`), xóa cache Redis và đồng bộ lên Airtable bảng `San pham & Bang gia`. Thiết bị sẽ hiển thị tức thì trên giao diện quản trị `https://phucthanhaudio.wiai.vn/`.
+
+---
+
+## 6. Chỉnh Sửa & Xóa Báo Giá (Edit / Delete Quote)
+
+### Chỉnh sửa thông tin báo giá:
+- **Endpoint:** `PUT https://apiphucthanhaudio.wiai.vn/api/v1/quotes/{quote_id}`
+- **Body Mẫu:**
+  ```json
+  {
+    "project_name": "Gói âm thanh Lounge & Rooftop Bar - Giai đoạn 2",
+    "company_name": "Công ty CP Giải trí SkyLight",
+    "contact_name": "Anh Nguyễn Hoàng Dũng",
+    "phone": "0912345678",
+    "status": "Dang dam phan",
+    "notes": "Đã chiết khấu bổ sung 5% theo thỏa thuận mới",
+    "grand_total": 240000000
+  }
+  ```
+
+### Xóa báo giá khỏi hệ thống:
+- **Endpoint:** `DELETE https://apiphucthanhaudio.wiai.vn/api/v1/quotes/{quote_id}`
+- Tự động xóa báo giá và các dòng thiết bị liên quan trong CSDL SQLite + đồng bộ xóa trên Airtable bảng `Bao gia`, làm mới Redis cache.
+
+---
+
+## 7. Chỉnh Sửa & Xóa Thiết Bị (Edit / Delete Product)
+
+- **Cập nhật thiết bị:** `PUT https://apiphucthanhaudio.wiai.vn/api/v1/products/{product_id}`
+  - Cho phép sửa: `name`, `brand`, `category`, `unit`, `sale_price`, `import_price`, `stock_quantity`, `min_threshold`, `specs`, `status`.
+- **Xóa thiết bị:** `DELETE https://apiphucthanhaudio.wiai.vn/api/v1/products/{product_id}`
+  - Tự động xóa thiết bị khỏi bảng giá và kho hàng trong CSDL SQLite + đồng bộ xóa trên Airtable.
