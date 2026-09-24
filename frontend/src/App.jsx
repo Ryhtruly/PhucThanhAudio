@@ -1221,13 +1221,13 @@ export default function App() {
     const fa = a.fields || {};
     const fb = b.fields || {};
     if (quoteSort === 'newest') {
-      const sa = extractTimeScore(fa['Ma bao gia'], q.createdTime || fa['created_at'], q.id);
-      const sb = extractTimeScore(fb['Ma bao gia'], q.createdTime || fb['created_at'], q.id);
+      const sa = extractTimeScore(fa['Ma bao gia'], a.createdTime || fa['created_at'], a.id);
+      const sb = extractTimeScore(fb['Ma bao gia'], b.createdTime || fb['created_at'], b.id);
       return sb.digits.localeCompare(sa.digits) || sb.raw.localeCompare(sa.raw);
     }
     if (quoteSort === 'oldest') {
-      const sa = extractTimeScore(fa['Ma bao gia'], q.createdTime || fa['created_at'], q.id);
-      const sb = extractTimeScore(fb['Ma bao gia'], q.createdTime || fb['created_at'], q.id);
+      const sa = extractTimeScore(fa['Ma bao gia'], a.createdTime || fa['created_at'], a.id);
+      const sb = extractTimeScore(fb['Ma bao gia'], b.createdTime || fb['created_at'], b.id);
       return sa.digits.localeCompare(sb.digits) || sa.raw.localeCompare(sb.raw);
     }
     if (quoteSort === 'price_desc') {
