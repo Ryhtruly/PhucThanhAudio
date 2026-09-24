@@ -1,6 +1,6 @@
 import PublicIntakePage from './pages/PublicIntakePage';
 import React, { useState, useEffect } from 'react';
-import { Trash2, Lock, Mail, LogOut, Eye, EyeOff, Pencil, Plus, Minus } from 'lucide-react';
+import { Trash2, Lock, Mail, LogOut, Eye, EyeOff, Pencil, Plus, Minus, Search, Filter, ArrowUpDown, Calendar, RefreshCw, X, SlidersHorizontal } from 'lucide-react';
 
 import { 
   API_BASE, APP_TITLE, APP_SUBTITLE, COMPANY_NAME, COMPANY_ADDRESS, 
@@ -219,6 +219,28 @@ export default function App() {
     money: '',
     service: ''
   });
+
+  // ==================== BỘ LỌC & SẮP XẾP TOÀN HỆ THỐNG ====================
+  // 1. Quản lý Hợp Đồng (Mặc định: Sắp xếp theo thời gian mới nhất trước)
+  const [contractSearch, setContractSearch] = useState('');
+  const [contractStatusFilter, setContractStatusFilter] = useState('all');
+  const [contractTypeFilter, setContractTypeFilter] = useState('all');
+  const [contractSort, setContractSort] = useState('newest'); // 'newest', 'oldest', 'price_desc', 'price_asc'
+
+  // 2. Quản lý Báo Giá (Mặc định: Sắp xếp theo thời gian mới nhất trước)
+  const [quoteSearch, setQuoteSearch] = useState('');
+  const [quoteStatusFilter, setQuoteStatusFilter] = useState('all');
+  const [quoteSort, setQuoteSort] = useState('newest'); // 'newest', 'oldest', 'price_desc', 'price_asc'
+
+  // 3. Quản lý Kho Hàng & Thiết Bị
+  const [invSearch, setInvSearch] = useState('');
+  const [invStatusFilter, setInvStatusFilter] = useState('all'); // 'all', 'low_stock', 'out_of_stock', 'safe'
+  const [invCategoryFilter, setInvCategoryFilter] = useState('all');
+  const [invSort, setInvSort] = useState('stock_asc'); // 'stock_asc', 'stock_desc', 'val_desc', 'name_asc'
+
+  // 4. Biểu đồ & Tổng quan điều hành (KPI Dashboard)
+  const [dashPeriodFilter, setDashPeriodFilter] = useState('all'); // 'all', 'thang_9', 'thang_8'
+  const [dashRevView, setDashRevView] = useState('all'); // 'all', 'signed', 'pending'
 
   const showToast = (msg, type = 'success') => {
     setToast({ msg, type });
@@ -1117,6 +1139,136 @@ export default function App() {
   const quoteVat = quoteForm.include_vat ? Math.round(quoteSubtotal * 0.1) : 0;
   const quoteGrandTotal = quoteSubtotal + quoteVat;
 
+  // ==================== TÍNH TOÁN DỮ LIỆU ĐÃ LỌC & SẮP XẾP ====================
+  // Helper trích xuất trọng số thời gian từ mã HĐ / BG (chuẩn xác đến từng giây)
+  const extractTimeScore = (codeStr, createdTime, idStr) => {
+    const raw = codeStr || idStr || '';
+    const digits = raw.replace(/\D/g, '');
+    const datePart = createdTime || '';
+    return { digits, datePart, raw };
+  };
+
+  // 1. Danh sách Hợp Đồng Đã Lọc & Sắp Xếp (Mặc định: Mới nhất trước)
+  const filteredContracts = contracts.filter(c => {
+    const f = c.fields || {};
+    const maHd = (f['Ma HD'] || c.id || '').toLowerCase();
+    const tenKh = (f['Nguoi ky KH'] || '').toLowerCase();
+    const mst = (f['MST KH'] || '').toLowerCase();
+    const loaiHd = f['Loai HD'] || '';
+    const status = f['Trang thai'] || 'Cho ky';
+
+    if (contractSearch.trim()) {
+      const q = contractSearch.trim().toLowerCase();
+      if (!maHd.includes(q) && !tenKh.includes(q) && !mst.includes(q)) {
+        return false;
+      }
+    }
+    if (contractStatusFilter !== 'all') {
+      if (contractStatusFilter === 'Da ky') {
+        if (status !== 'Da ky' && status !== 'Dang thuc hien' && status !== 'Hoan thanh') return false;
+      } else if (contractStatusFilter === 'Cho ky') {
+        if (status === 'Da ky' || status === 'Dang thuc hien' || status === 'Hoan thanh') return false;
+      } else if (status !== contractStatusFilter) {
+        return false;
+      }
+    }
+    if (contractTypeFilter !== 'all' && loaiHd !== contractTypeFilter) {
+      return false;
+    }
+    return true;
+  }).sort((a, b) => {
+    const fa = a.fields || {};
+    const fb = b.fields || {};
+    if (contractSort === 'newest') {
+      const sa = extractTimeScore(fa['Ma HD'], a.createdTime || fa['created_at'], a.id);
+      const sb = extractTimeScore(fb['Ma HD'], b.createdTime || fb['created_at'], b.id);
+      return sb.digits.localeCompare(sa.digits) || sb.raw.localeCompare(sa.raw);
+    }
+    if (contractSort === 'oldest') {
+      const sa = extractTimeScore(fa['Ma HD'], a.createdTime || fa['created_at'], a.id);
+      const sb = extractTimeScore(fb['Ma HD'], b.createdTime || fb['created_at'], b.id);
+      return sa.digits.localeCompare(sb.digits) || sa.raw.localeCompare(sb.raw);
+    }
+    if (contractSort === 'price_desc') {
+      return (fb['Gia tri HD'] || 0) - (fa['Gia tri HD'] || 0);
+    }
+    if (contractSort === 'price_asc') {
+      return (fa['Gia tri HD'] || 0) - (fb['Gia tri HD'] || 0);
+    }
+    return 0;
+  });
+
+  // 2. Danh sách Báo Giá Đã Lọc & Sắp Xếp (Mặc định: Mới nhất trước)
+  const filteredQuotes = quotes.filter(q => {
+    const f = q.fields || {};
+    const maBg = (f['Ma bao gia'] || q.id || '').toLowerCase();
+    const tenDuAn = (f['Ten du an'] || '').toLowerCase();
+    const tenKh = (f['Ten cty Khach'] || '').toLowerCase();
+    const sdt = (f['So dien thoai'] || '').toLowerCase();
+    const status = f['Trang thai'] || 'Moi';
+
+    if (quoteSearch.trim()) {
+      const term = quoteSearch.trim().toLowerCase();
+      if (!maBg.includes(term) && !tenDuAn.includes(term) && !tenKh.includes(term) && !sdt.includes(term)) {
+        return false;
+      }
+    }
+    if (quoteStatusFilter !== 'all') {
+      if (status !== quoteStatusFilter) return false;
+    }
+    return true;
+  }).sort((a, b) => {
+    const fa = a.fields || {};
+    const fb = b.fields || {};
+    if (quoteSort === 'newest') {
+      const sa = extractTimeScore(fa['Ma bao gia'], q.createdTime || fa['created_at'], q.id);
+      const sb = extractTimeScore(fb['Ma bao gia'], q.createdTime || fb['created_at'], q.id);
+      return sb.digits.localeCompare(sa.digits) || sb.raw.localeCompare(sa.raw);
+    }
+    if (quoteSort === 'oldest') {
+      const sa = extractTimeScore(fa['Ma bao gia'], q.createdTime || fa['created_at'], q.id);
+      const sb = extractTimeScore(fb['Ma bao gia'], q.createdTime || fb['created_at'], q.id);
+      return sa.digits.localeCompare(sb.digits) || sa.raw.localeCompare(sb.raw);
+    }
+    if (quoteSort === 'price_desc') {
+      return (fb['Tong cong gia tri'] || 0) - (fa['Tong cong gia tri'] || 0);
+    }
+    if (quoteSort === 'price_asc') {
+      return (fa['Tong cong gia tri'] || 0) - (fb['Tong cong gia tri'] || 0);
+    }
+    return 0;
+  });
+
+  // 3. Danh sách Tồn Kho Đã Lọc & Sắp Xếp
+  const filteredInventoryItems = (inventoryData.items || []).filter(item => {
+    if (invSearch.trim()) {
+      const s = invSearch.trim().toLowerCase();
+      const name = (item.name || '').toLowerCase();
+      const sku = (item.sku || '').toLowerCase();
+      const brand = (item.brand || '').toLowerCase();
+      if (!name.includes(s) && !sku.includes(s) && !brand.includes(s)) return false;
+    }
+    if (invCategoryFilter !== 'all') {
+      if ((item.category || '').toLowerCase() !== invCategoryFilter.toLowerCase()) return false;
+    }
+    if (invStatusFilter !== 'all') {
+      if (invStatusFilter === 'can_nhap') {
+        if (item.stock > item.min_threshold || item.stock === 0) return false;
+      } else if (invStatusFilter === 'het_hang') {
+        if (item.stock !== 0) return false;
+      } else if (invStatusFilter === 'an_toan') {
+        if (item.stock <= item.min_threshold) return false;
+      }
+    }
+    return true;
+  }).sort((a, b) => {
+    if (invSort === 'stock_asc') return (a.stock || 0) - (b.stock || 0);
+    if (invSort === 'stock_desc') return (b.stock || 0) - (a.stock || 0);
+    if (invSort === 'val_desc') return (b.total_value || 0) - (a.total_value || 0);
+    if (invSort === 'name_asc') return (a.name || '').localeCompare(b.name || '');
+    return 0;
+  });
+
   // Render Login Screen if not authenticated
   if (!currentUser) {
     return (
@@ -1548,27 +1700,105 @@ export default function App() {
               </div>
             </div>
 
+            {/* THANH BỘ LỌC ĐIỀU HÀNH & BIỂU ĐỒ DOANH SỐ */}
+            <div style={{ display: 'flex', flexWrap: 'wrap', gap: 12, alignItems: 'center', justifyContent: 'space-between', marginBottom: 24, background: '#F8FAFC', padding: '14px 18px', borderRadius: 12, border: '1px solid #E2E8F0' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                  <SlidersHorizontal size={15} style={{ color: '#D31027' }} />
+                  <span style={{ fontSize: 13, fontWeight: 700, color: '#0F172A' }}>Bộ lọc biểu đồ & chỉ số:</span>
+                </div>
+
+                {/* Góc nhìn Doanh thu */}
+                <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                  <Filter size={14} style={{ color: '#64748B' }} />
+                  <select
+                    className="input-field"
+                    value={dashRevView}
+                    onChange={e => setDashRevView(e.target.value)}
+                    style={{ fontSize: 12.5, padding: '7px 12px', background: '#FFFFFF', fontWeight: 600, color: '#0F172A', minWidth: 220 }}
+                  >
+                    <option value="all">Toàn bộ quy mô (Thực đạt + Chờ ký)</option>
+                    <option value="signed">Doanh thu thực đạt (HĐ Đã ký)</option>
+                    <option value="pending">Dự thu pipeline (HĐ Chờ ký)</option>
+                  </select>
+                </div>
+
+                {/* Kỳ báo cáo */}
+                <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                  <Calendar size={14} style={{ color: '#64748B' }} />
+                  <select
+                    className="input-field"
+                    value={dashPeriodFilter}
+                    onChange={e => setDashPeriodFilter(e.target.value)}
+                    style={{ fontSize: 12.5, padding: '7px 12px', background: '#FFFFFF', fontWeight: 600, color: '#0F172A', minWidth: 170 }}
+                  >
+                    <option value="all">Tất cả kỳ báo cáo</option>
+                    <option value="thang_9">Tháng 9/2026 (Hiện tại)</option>
+                    <option value="thang_8">Tháng 8/2026</option>
+                  </select>
+                </div>
+              </div>
+
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                {(dashRevView !== 'all' || dashPeriodFilter !== 'all') && (
+                  <button
+                    onClick={() => {
+                      setDashRevView('all');
+                      setDashPeriodFilter('all');
+                    }}
+                    className="btn-secondary"
+                    style={{ fontSize: 12, padding: '7px 12px', color: '#DC2626', borderColor: '#FECACA', background: '#FEF2F2', fontWeight: 700, display: 'inline-flex', alignItems: 'center', gap: 5 }}
+                  >
+                    <X size={13} />
+                    Đặt lại bộ lọc
+                  </button>
+                )}
+                <button
+                  onClick={fetchInitialData}
+                  className="btn-secondary"
+                  style={{ fontSize: 12, fontWeight: 600, display: 'inline-flex', alignItems: 'center', gap: 5, padding: '7px 12px' }}
+                >
+                  <RefreshCw size={13} />
+                  Làm mới số liệu
+                </button>
+              </div>
+            </div>
+
             {/* Clean Refined KPI Cards Grid (Subtle, Not Overwhelming) */}
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))', gap: 22, marginBottom: 30 }}>
 
               <div className="white-card" style={{ padding: '22px 24px', position: 'relative', overflow: 'hidden' }}>
                 <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: 3, background: '#D31027' }}></div>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                  <p style={{ color: '#64748B', fontSize: 11, fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.04em' }}>DOANH THU THUẦN (TRƯỚC VAT)</p>
-                  <span style={{ fontSize: 10, background: '#F1F5F9', color: '#475569', padding: '2px 6px', borderRadius: 4, fontWeight: 600 }}>DOANH THU THỰC</span>
+                  <p style={{ color: '#64748B', fontSize: 11, fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.04em' }}>
+                    {dashRevView === 'signed' ? 'DOANH THU THỰC ĐẠT (ĐÃ KÝ)' : dashRevView === 'pending' ? 'DỰ THU PIPELINE (CHỜ KÝ)' : 'DOANH THU THUẦN (TRƯỚC VAT)'}
+                  </p>
+                  <span style={{ fontSize: 10, background: '#F1F5F9', color: '#475569', padding: '2px 6px', borderRadius: 4, fontWeight: 600 }}>
+                    {dashRevView === 'signed' ? 'ĐÃ KÝ DUYỆT' : dashRevView === 'pending' ? 'CHỜ KÝ' : 'DOANH THU THỰC'}
+                  </span>
                 </div>
                 <h3 style={{ fontSize: 22, fontWeight: 700, color: '#1E293B', marginTop: 6, letterSpacing: '-0.02em' }}>
-                  {(kpiData?.total_revenue || 0).toLocaleString('vi-VN')} đ
+                  {(
+                    dashRevView === 'signed' ? (kpiData?.net_revenue_signed || 0) :
+                    dashRevView === 'pending' ? (kpiData?.pending_revenue || 0) :
+                    (kpiData?.total_revenue || 0)
+                  ).toLocaleString('vi-VN')} đ
                 </h3>
                 <p style={{ fontSize: 12, color: '#16A34A', marginTop: 8, fontWeight: 500, display: 'flex', alignItems: 'center', gap: 5 }}>
                   <span style={{ width: 6, height: 6, borderRadius: '50%', background: '#16A34A' }}></span>
-                  {kpiData?.net_revenue_signed > 0 ? (
-                    <span>Đã ký/thực hiện: <strong>{(kpiData.net_revenue_signed).toLocaleString('vi-VN')} đ</strong> ({kpiData.signed_contracts_count || 0} HĐ)</span>
+                  {dashRevView === 'signed' ? (
+                    <span>Đã ký/thực hiện: <strong>{(kpiData?.net_revenue_signed || 0).toLocaleString('vi-VN')} đ</strong> ({kpiData?.signed_contracts_count || 0} HĐ)</span>
+                  ) : dashRevView === 'pending' ? (
+                    <span>Chờ ký duyệt: <strong>{(kpiData?.pending_revenue || 0).toLocaleString('vi-VN')} đ</strong> ({kpiData?.pending_contracts_count || 0} HĐ)</span>
                   ) : (
-                    <span>Tổng phát hành: {kpiData?.total_contracts || contracts.length} hợp đồng</span>
+                    kpiData?.net_revenue_signed > 0 ? (
+                      <span>Đã ký/thực hiện: <strong>{(kpiData.net_revenue_signed).toLocaleString('vi-VN')} đ</strong> ({kpiData.signed_contracts_count || 0} HĐ)</span>
+                    ) : (
+                      <span>Tổng phát hành: {kpiData?.total_contracts || contracts.length} hợp đồng</span>
+                    )
                   )}
                 </p>
-                {kpiData?.pending_revenue > 0 && kpiData?.net_revenue_signed > 0 && (
+                {dashRevView === 'all' && kpiData?.pending_revenue > 0 && kpiData?.net_revenue_signed > 0 && (
                   <p style={{ fontSize: 11, color: '#64748B', margin: '4px 0 0 11px' }}>
                     ● Dự thu chờ ký: <strong>{(kpiData.pending_revenue).toLocaleString('vi-VN')} đ</strong> ({kpiData.pending_contracts_count || 0} HĐ)
                   </p>
@@ -1615,21 +1845,34 @@ export default function App() {
             {/* ============================================================== */}
             {(() => {
               // 1. Dữ liệu xu hướng từ kpiData.monthly_trend (100% SỐ THẬT ZERO-MOCK TỪ DATABASE)
-              const trend = (kpiData?.monthly_trend && kpiData.monthly_trend.length > 0) ? kpiData.monthly_trend : [
+              const rawTrend = (kpiData?.monthly_trend && kpiData.monthly_trend.length > 0) ? kpiData.monthly_trend : [
                 { month: 'Tháng 8', actual: 215000000, target: 300000000, pending: 0 },
                 { month: 'Tháng 9', actual: 0, target: 300000000, pending: 4915518182 }
               ];
-              const maxTrendVal = Math.max(...trend.map(t => Math.max(t.actual || 0, t.target || 0)), 350000000);
+              const trend = rawTrend.filter(t => {
+                if (dashPeriodFilter === 'thang_9') return t.month.includes('9');
+                if (dashPeriodFilter === 'thang_8') return t.month.includes('8');
+                return true;
+              });
+
+              const getVal = (t) => {
+                if (dashRevView === 'signed') return t.actual || 0;
+                if (dashRevView === 'pending') return t.pending || 0;
+                return (t.actual || 0) + (t.pending || 0);
+              };
+
+              const maxTrendVal = Math.max(...trend.map(t => Math.max(getVal(t), t.target || 0)), 350000000);
               const targetVal = trend[0]?.target || 300000000;
               const targetY = Math.round(168 - (targetVal / maxTrendVal) * (168 - 42));
 
               const trendPoints = trend.map((t, idx) => {
                 const x = trend.length === 1 ? 280 : (80 + idx * ((480 - 80) / Math.max(trend.length - 1, 1)));
-                const y = 168 - ((t.actual || 0) / maxTrendVal) * (168 - 42);
+                const valNum = getVal(t);
+                const y = 168 - (valNum / maxTrendVal) * (168 - 42);
                 return {
                   x: Math.round(x),
                   y: Math.round(y),
-                  val: `${Math.round((t.actual || 0) / 1000000)} Tr`,
+                  val: `${Math.round(valNum / 1000000)} Tr`,
                   month: t.month,
                   actual: t.actual,
                   pending: t.pending || 0,
@@ -2486,18 +2729,95 @@ export default function App() {
 
             {/* BẢNG DANH SÁCH BÁO GIÁ ĐÃ LẬP */}
             <div className="white-card" style={{ padding: '24px 28px', marginTop: 24 }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 18 }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 18, flexWrap: 'wrap', gap: 12 }}>
                 <div>
-                  <h3 style={{ fontSize: 16, fontWeight: 800, color: '#0F172A', margin: 0 }}>
-                    Danh Sách Báo Giá Đã Lập
+                  <h3 style={{ fontSize: 16, fontWeight: 800, color: '#0F172A', margin: 0, display: 'flex', alignItems: 'center', gap: 8 }}>
+                    <span>Danh Sách Báo Giá Đã Lập</span>
+                    <span style={{ fontSize: 11, background: '#FEF2F2', color: '#D31027', padding: '2px 8px', borderRadius: 4, fontWeight: 700 }}>
+                      Mới nhất trước 🕒
+                    </span>
                   </h3>
                   <p style={{ fontSize: 12.5, color: '#64748B', margin: '4px 0 0 0' }}>
-                    Tổng cộng <strong>{quotes.length} báo giá</strong> đã khởi tạo trên hệ thống
+                    Hiển thị <strong>{filteredQuotes.length}</strong> / <strong>{quotes.length} báo giá</strong> trên hệ thống
                   </p>
                 </div>
-                <button onClick={fetchInitialData} className="btn-secondary" style={{ fontSize: 12, fontWeight: 600 }}>
+                <button onClick={fetchInitialData} className="btn-secondary" style={{ fontSize: 12, fontWeight: 600, display: 'inline-flex', alignItems: 'center', gap: 5 }}>
+                  <RefreshCw size={13} />
                   Làm mới
                 </button>
+              </div>
+
+              {/* THANH TÌM KIẾM & BỘ LỌC BÁO GIÁ NÂNG CAO */}
+              <div style={{ display: 'flex', flexWrap: 'wrap', gap: 10, alignItems: 'center', marginBottom: 18, background: '#F8FAFC', padding: '14px 16px', borderRadius: 10, border: '1px solid #E2E8F0' }}>
+                <div style={{ flex: '1 1 240px', position: 'relative' }}>
+                  <input
+                    type="text"
+                    className="input-field"
+                    placeholder="Tìm theo Mã Báo Giá, Tên dự án, Khách hàng, SĐT..."
+                    value={quoteSearch}
+                    onChange={e => setQuoteSearch(e.target.value)}
+                    style={{ paddingLeft: 34, fontSize: 13, background: '#FFFFFF' }}
+                  />
+                  <Search size={15} style={{ position: 'absolute', left: 11, top: '50%', transform: 'translateY(-50%)', color: '#94A3B8' }} />
+                  {quoteSearch && (
+                    <button
+                      onClick={() => setQuoteSearch('')}
+                      style={{ position: 'absolute', right: 10, top: '50%', transform: 'translateY(-50%)', background: 'none', border: 'none', color: '#94A3B8', cursor: 'pointer', padding: 2 }}
+                    >
+                      <X size={14} />
+                    </button>
+                  )}
+                </div>
+
+                <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap', alignItems: 'center' }}>
+                  {/* Lọc Trạng thái Báo giá */}
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                    <Filter size={14} style={{ color: '#64748B' }} />
+                    <select
+                      className="input-field"
+                      value={quoteStatusFilter}
+                      onChange={e => setQuoteStatusFilter(e.target.value)}
+                      style={{ fontSize: 12.5, padding: '7px 12px', background: '#FFFFFF', minWidth: 140 }}
+                    >
+                      <option value="all">Tất cả trạng thái</option>
+                      <option value="Moi">Mới khởi tạo</option>
+                      <option value="Da gui">Đã gửi khách</option>
+                      <option value="Dang dam phan">Đang đàm phán</option>
+                      <option value="Da chot">Đã chốt (Won)</option>
+                      <option value="Huy">Hủy / Thất bại</option>
+                    </select>
+                  </div>
+
+                  {/* Sắp xếp Thời gian / Giá trị */}
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                    <ArrowUpDown size={14} style={{ color: '#64748B' }} />
+                    <select
+                      className="input-field"
+                      value={quoteSort}
+                      onChange={e => setQuoteSort(e.target.value)}
+                      style={{ fontSize: 12.5, padding: '7px 12px', background: '#FFFFFF', fontWeight: 600, color: '#0F172A', minWidth: 180 }}
+                    >
+                      <option value="newest">Mới nhất trước (Mặc định)</option>
+                      <option value="oldest">Cũ nhất trước</option>
+                      <option value="price_desc">Tổng tiền: Cao ➔ Thấp</option>
+                      <option value="price_asc">Tổng tiền: Thấp ➔ Cao</option>
+                    </select>
+                  </div>
+
+                  {(quoteSearch || quoteStatusFilter !== 'all' || quoteSort !== 'newest') && (
+                    <button
+                      onClick={() => {
+                        setQuoteSearch('');
+                        setQuoteStatusFilter('all');
+                        setQuoteSort('newest');
+                      }}
+                      className="btn-secondary"
+                      style={{ fontSize: 12, padding: '7px 12px', color: '#DC2626', borderColor: '#FECACA', background: '#FEF2F2', fontWeight: 700 }}
+                    >
+                      Xóa lọc
+                    </button>
+                  )}
+                </div>
               </div>
 
               <div style={{ overflowX: 'auto', width: '100%' }}>
@@ -2513,20 +2833,27 @@ export default function App() {
                     </tr>
                   </thead>
                   <tbody>
-                    {quotes.length === 0 ? (
+                    {filteredQuotes.length === 0 ? (
                       <tr>
-                        <td colSpan={6} style={{ textAlign: 'center', padding: '30px', color: '#94A3B8' }}>
-                          Chưa có báo giá nào được lưu trên hệ thống.
+                        <td colSpan={6} style={{ textAlign: 'center', padding: '36px 20px', color: '#94A3B8' }}>
+                          <div style={{ fontSize: 24, marginBottom: 8 }}>🔍</div>
+                          <div style={{ fontSize: 14, fontWeight: 700, color: '#475569' }}>Không tìm thấy báo giá phù hợp với bộ lọc</div>
+                          <div style={{ fontSize: 12, color: '#94A3B8', marginTop: 4 }}>Hãy thử thay đổi từ khóa tìm kiếm hoặc bấm "Xóa lọc"</div>
                         </td>
                       </tr>
                     ) : (
-                      quotes.map(q => {
+                      filteredQuotes.map(q => {
                         const f = q.fields || {};
                         const maBg = f['Ma bao gia'] || q.id;
                         return (
                           <tr key={q.id}>
                             <td style={{ fontWeight: 700, color: '#D31027', whiteSpace: 'nowrap' }}>
-                              {maBg}
+                              <div>{maBg}</div>
+                              {f['Ngay tao'] && (
+                                <span style={{ fontSize: 10.5, color: '#94A3B8', fontWeight: 500, display: 'block', marginTop: 2 }}>
+                                  🕒 {f['Ngay tao']}
+                                </span>
+                              )}
                             </td>
                             <td>
                               <strong style={{ color: '#0F172A', display: 'block', fontSize: 13.5 }}>
@@ -2544,11 +2871,9 @@ export default function App() {
                             </td>
                             <td style={{ textAlign: 'right', fontWeight: 700, color: '#0F172A', whiteSpace: 'nowrap' }}>
                               <div style={{ fontSize: 13.5 }}>{(f['Tong cong gia tri'] || 0).toLocaleString('vi-VN')} đ</div>
-                              {f['Ngay tao'] && (
-                                <span style={{ fontSize: 10, color: '#94A3B8', display: 'block', marginTop: 2 }}>
-                                  Ngày: {f['Ngay tao']}
-                                </span>
-                              )}
+                              <span style={{ fontSize: 10, color: '#16A34A', fontWeight: 600, display: 'block', marginTop: 2 }}>
+                                ● Đã gồm VAT 10%
+                              </span>
                             </td>
                             <td style={{ textAlign: 'center', whiteSpace: 'nowrap' }}>
                               <span className={
@@ -3026,18 +3351,108 @@ export default function App() {
 
             {/* BẢNG DANH SÁCH HỢP ĐỒNG ĐÃ PHÁT HÀNH TRÊN HỆ THỐNG */}
             <div className="white-card" style={{ padding: '24px 28px' }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 18 }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 18, flexWrap: 'wrap', gap: 12 }}>
                 <div>
-                  <h3 style={{ fontSize: 15, fontWeight: 700, color: '#0F172A', margin: 0 }}>
-                    Danh Sách Hợp Đồng Kinh Tế
+                  <h3 style={{ fontSize: 16, fontWeight: 800, color: '#0F172A', margin: 0, display: 'flex', alignItems: 'center', gap: 8 }}>
+                    <span>Danh Sách Hợp Đồng Kinh Tế</span>
+                    <span style={{ fontSize: 11, background: '#FEF2F2', color: '#D31027', padding: '2px 8px', borderRadius: 4, fontWeight: 700 }}>
+                      Mới nhất trước 🕒
+                    </span>
                   </h3>
                   <p style={{ fontSize: 12.5, color: '#64748B', margin: '4px 0 0 0' }}>
-                    Tổng cộng <strong>{contracts.length} hợp đồng</strong> đã lưu trữ trên hệ thống cơ sở dữ liệu
+                    Hiển thị <strong>{filteredContracts.length}</strong> / <strong>{contracts.length} hợp đồng</strong> trong hệ thống cơ sở dữ liệu
                   </p>
                 </div>
-                <button onClick={fetchInitialData} className="btn-secondary" style={{ fontSize: 12, fontWeight: 600 }}>
-                  Làm mới
-                </button>
+                <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+                  <button onClick={fetchInitialData} className="btn-secondary" style={{ fontSize: 12, fontWeight: 600, display: 'inline-flex', alignItems: 'center', gap: 5 }}>
+                    <RefreshCw size={13} />
+                    Làm mới
+                  </button>
+                </div>
+              </div>
+
+              {/* THANH TÌM KIẾM & BỘ LỌC HỢP ĐỒNG NÂNG CAO */}
+              <div style={{ display: 'flex', flexWrap: 'wrap', gap: 10, alignItems: 'center', marginBottom: 18, background: '#F8FAFC', padding: '14px 16px', borderRadius: 10, border: '1px solid #E2E8F0' }}>
+                <div style={{ flex: '1 1 240px', position: 'relative' }}>
+                  <input
+                    type="text"
+                    className="input-field"
+                    placeholder="Tìm theo Mã HĐ, Tên KH / Công ty, MST..."
+                    value={contractSearch}
+                    onChange={e => setContractSearch(e.target.value)}
+                    style={{ paddingLeft: 34, fontSize: 13, background: '#FFFFFF' }}
+                  />
+                  <Search size={15} style={{ position: 'absolute', left: 11, top: '50%', transform: 'translateY(-50%)', color: '#94A3B8' }} />
+                  {contractSearch && (
+                    <button
+                      onClick={() => setContractSearch('')}
+                      style={{ position: 'absolute', right: 10, top: '50%', transform: 'translateY(-50%)', background: 'none', border: 'none', color: '#94A3B8', cursor: 'pointer', padding: 2 }}
+                    >
+                      <X size={14} />
+                    </button>
+                  )}
+                </div>
+
+                <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap', alignItems: 'center' }}>
+                  {/* Lọc Trạng thái */}
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                    <Filter size={14} style={{ color: '#64748B' }} />
+                    <select
+                      className="input-field"
+                      value={contractStatusFilter}
+                      onChange={e => setContractStatusFilter(e.target.value)}
+                      style={{ fontSize: 12.5, padding: '7px 12px', background: '#FFFFFF', minWidth: 140 }}
+                    >
+                      <option value="all">Tất cả trạng thái</option>
+                      <option value="Cho ky">Chờ ký duyệt (Cho ky)</option>
+                      <option value="Da ky">Đã ký / Đang thực hiện</option>
+                    </select>
+                  </div>
+
+                  {/* Lọc Loại Hợp đồng */}
+                  <select
+                    className="input-field"
+                    value={contractTypeFilter}
+                    onChange={e => setContractTypeFilter(e.target.value)}
+                    style={{ fontSize: 12.5, padding: '7px 12px', background: '#FFFFFF', minWidth: 150 }}
+                  >
+                    <option value="all">Tất cả loại HĐ</option>
+                    {Array.from(new Set(contracts.map(c => c.fields?.['Loai HD']).filter(Boolean))).map(t => (
+                      <option key={t} value={t}>{t}</option>
+                    ))}
+                  </select>
+
+                  {/* Sắp xếp Thời gian / Giá trị */}
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                    <ArrowUpDown size={14} style={{ color: '#64748B' }} />
+                    <select
+                      className="input-field"
+                      value={contractSort}
+                      onChange={e => setContractSort(e.target.value)}
+                      style={{ fontSize: 12.5, padding: '7px 12px', background: '#FFFFFF', fontWeight: 600, color: '#0F172A', minWidth: 180 }}
+                    >
+                      <option value="newest">Mới nhất trước (Mặc định)</option>
+                      <option value="oldest">Cũ nhất trước</option>
+                      <option value="price_desc">Giá trị HĐ: Cao ➔ Thấp</option>
+                      <option value="price_asc">Giá trị HĐ: Thấp ➔ Cao</option>
+                    </select>
+                  </div>
+
+                  {(contractSearch || contractStatusFilter !== 'all' || contractTypeFilter !== 'all' || contractSort !== 'newest') && (
+                    <button
+                      onClick={() => {
+                        setContractSearch('');
+                        setContractStatusFilter('all');
+                        setContractTypeFilter('all');
+                        setContractSort('newest');
+                      }}
+                      className="btn-secondary"
+                      style={{ fontSize: 12, padding: '7px 12px', color: '#DC2626', borderColor: '#FECACA', background: '#FEF2F2', fontWeight: 700 }}
+                    >
+                      Xóa lọc
+                    </button>
+                  )}
+                </div>
               </div>
 
               <div style={{ overflowX: 'auto', width: '100%' }}>
@@ -3053,60 +3468,75 @@ export default function App() {
                     </tr>
                   </thead>
                   <tbody>
-                    {contracts.map(c => {
-                      const f = c.fields || {};
-                      const maHd = f['Ma HD'] || c.id;
-                      return (
-                        <tr key={c.id}>
-                          <td style={{ fontWeight: 700, color: '#D31027', whiteSpace: 'nowrap' }}>
-                            {maHd}
-                          </td>
-                          <td>
-                            <strong style={{ color: '#0F172A', display: 'block', fontSize: 13.5 }}>{f['Nguoi ky KH'] || 'Khách hàng đối tác'}</strong>
-                            {f['MST KH'] && <span style={{ fontSize: 11, color: '#94A3B8' }}>MST: {f['MST KH']}</span>}
-                          </td>
-                          <td style={{ color: '#475569' }}>
-                            {f['Loai HD'] || 'Cung cấp thiết bị'}
-                          </td>
-                          <td style={{ textAlign: 'right', fontWeight: 700, color: '#0F172A', whiteSpace: 'nowrap' }}>
-                            <div style={{ fontSize: 13.5 }}>{(f['Gia tri HD'] || 0).toLocaleString('vi-VN')} đ</div>
-                            <span style={{ fontSize: 10, color: '#16A34A', fontWeight: 600, display: 'block', marginTop: 2 }}>
-                              ● Đã gồm VAT 10%
-                            </span>
-                          </td>
-                          <td style={{ textAlign: 'center', whiteSpace: 'nowrap' }}>
-                            <span className={
-                              (f['Trang thai'] === 'Da ky' || f['Trang thai'] === 'Dang thuc hien' || f['Trang thai'] === 'Hoan thanh')
-                                ? 'badge badge-green'
-                                : 'badge badge-gold'
-                            }>
-                              {f['Trang thai'] === 'Da ky' ? 'Đã ký' : (f['Trang thai'] || 'Cho ky')}
-                            </span>
-                          </td>
-                          <td style={{ textAlign: 'center', whiteSpace: 'nowrap' }}>
-                            <div style={{ display: 'inline-flex', gap: 6, alignItems: 'center' }}>
-                              <button
-                                onClick={() => triggerDownload(`/api/v1/contracts/${maHd}/${maHd}.docx`, `${maHd}.docx`)}
-                                className="btn-secondary"
-                                style={{ padding: '6px 12px', fontSize: 12, display: 'inline-flex', alignItems: 'center', gap: 4 }}
-                              >
-                                Tải .docx
-                              </button>
-                              {(f['Trang thai'] || 'Cho ky') === 'Cho ky' && (
-                                <button
-                                  onClick={() => handleUpdateContractStatus(maHd, 'Da ky')}
-                                  className="btn-primary"
-                                  style={{ padding: '6px 12px', fontSize: 12, display: 'inline-flex', alignItems: 'center', gap: 4, background: '#16A34A', borderColor: '#16A34A' }}
-                                  title="Xác nhận khách hàng đã ký để ghi nhận doanh thu thực tế"
-                                >
-                                  Ký Duyệt
-                                </button>
+                    {filteredContracts.length === 0 ? (
+                      <tr>
+                        <td colSpan={6} style={{ textAlign: 'center', padding: '36px 20px', color: '#94A3B8' }}>
+                          <div style={{ fontSize: 24, marginBottom: 8 }}>🔍</div>
+                          <div style={{ fontSize: 14, fontWeight: 700, color: '#475569' }}>Không tìm thấy hợp đồng phù hợp với bộ lọc</div>
+                          <div style={{ fontSize: 12, color: '#94A3B8', marginTop: 4 }}>Hãy thử thay đổi từ khóa tìm kiếm hoặc bấm "Xóa lọc"</div>
+                        </td>
+                      </tr>
+                    ) : (
+                      filteredContracts.map(c => {
+                        const f = c.fields || {};
+                        const maHd = f['Ma HD'] || c.id;
+                        return (
+                          <tr key={c.id}>
+                            <td style={{ fontWeight: 700, color: '#D31027', whiteSpace: 'nowrap' }}>
+                              <div>{maHd}</div>
+                              {f['Ngay tao'] && (
+                                <span style={{ fontSize: 10.5, color: '#94A3B8', fontWeight: 500, display: 'block', marginTop: 2 }}>
+                                  🕒 {f['Ngay tao']}
+                                </span>
                               )}
-                            </div>
-                          </td>
-                        </tr>
-                      );
-                    })}
+                            </td>
+                            <td>
+                              <strong style={{ color: '#0F172A', display: 'block', fontSize: 13.5 }}>{f['Nguoi ky KH'] || 'Khách hàng đối tác'}</strong>
+                              {f['MST KH'] && <span style={{ fontSize: 11, color: '#94A3B8' }}>MST: {f['MST KH']}</span>}
+                            </td>
+                            <td style={{ color: '#475569' }}>
+                              {f['Loai HD'] || 'Cung cấp thiết bị'}
+                            </td>
+                            <td style={{ textAlign: 'right', fontWeight: 700, color: '#0F172A', whiteSpace: 'nowrap' }}>
+                              <div style={{ fontSize: 13.5 }}>{(f['Gia tri HD'] || 0).toLocaleString('vi-VN')} đ</div>
+                              <span style={{ fontSize: 10, color: '#16A34A', fontWeight: 600, display: 'block', marginTop: 2 }}>
+                                ● Đã gồm VAT 10%
+                              </span>
+                            </td>
+                            <td style={{ textAlign: 'center', whiteSpace: 'nowrap' }}>
+                              <span className={
+                                (f['Trang thai'] === 'Da ky' || f['Trang thai'] === 'Dang thuc hien' || f['Trang thai'] === 'Hoan thanh')
+                                  ? 'badge badge-green'
+                                  : 'badge badge-gold'
+                              }>
+                                {f['Trang thai'] === 'Da ky' ? 'Đã ký' : (f['Trang thai'] || 'Cho ky')}
+                              </span>
+                            </td>
+                            <td style={{ textAlign: 'center', whiteSpace: 'nowrap' }}>
+                              <div style={{ display: 'inline-flex', gap: 6, alignItems: 'center' }}>
+                                <button
+                                  onClick={() => triggerDownload(`/api/v1/contracts/${maHd}/${maHd}.docx`, `${maHd}.docx`)}
+                                  className="btn-secondary"
+                                  style={{ padding: '6px 12px', fontSize: 12, display: 'inline-flex', alignItems: 'center', gap: 4 }}
+                                >
+                                  Tải .docx
+                                </button>
+                                {(f['Trang thai'] || 'Cho ky') === 'Cho ky' && (
+                                  <button
+                                    onClick={() => handleUpdateContractStatus(maHd, 'Da ky')}
+                                    className="btn-primary"
+                                    style={{ padding: '6px 12px', fontSize: 12, display: 'inline-flex', alignItems: 'center', gap: 4, background: '#16A34A', borderColor: '#16A34A' }}
+                                    title="Xác nhận khách hàng đã ký để ghi nhận doanh thu thực tế"
+                                  >
+                                    Ký Duyệt
+                                  </button>
+                                )}
+                              </div>
+                            </td>
+                          </tr>
+                        );
+                      })
+                    )}
                   </tbody>
                 </table>
               </div>
@@ -3767,41 +4197,124 @@ export default function App() {
 
             {/* Inventory Table */}
             <div className="white-card" style={{ padding: 22 }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
-                <h4 style={{ fontSize: 17, fontWeight: 800, color: '#0F172A', margin: 0 }}>
-                  Bảng Danh Mục Thiết Bị Âm Thanh & Số Lượng Tồn Kho
-                </h4>
-                <div style={{ display: 'flex', gap: 10 }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16, flexWrap: 'wrap', gap: 12 }}>
+                <div>
+                  <h4 style={{ fontSize: 17, fontWeight: 800, color: '#0F172A', margin: 0, display: 'flex', alignItems: 'center', gap: 8 }}>
+                    <span>Bảng Danh Mục Thiết Bị Âm Thanh & Số Lượng Tồn Kho</span>
+                    <span style={{ fontSize: 11, background: '#DCFCE7', color: '#166534', padding: '2px 8px', borderRadius: 4, fontWeight: 700 }}>
+                      Thời gian thực
+                    </span>
+                  </h4>
+                  <p style={{ fontSize: 12.5, color: '#64748B', margin: '4px 0 0 0' }}>
+                    Hiển thị <strong>{filteredInventoryItems.length}</strong> / <strong>{inventoryData.items.length} thiết bị</strong> trong kho
+                  </p>
+                </div>
+                <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
                   <button
-                    onClick={() => setInvFilter('all')}
-                    style={{
-                      padding: '5px 12px',
-                      fontSize: 12,
-                      fontWeight: 700,
-                      borderRadius: 6,
-                      border: '1px solid #E2E8F0',
-                      background: invFilter === 'all' ? '#0F172A' : '#FFFFFF',
-                      color: invFilter === 'all' ? '#FFFFFF' : '#475569',
-                      cursor: 'pointer'
+                    onClick={() => {
+                      setInvStatusFilter(invStatusFilter === 'can_nhap' ? 'all' : 'can_nhap');
                     }}
-                  >
-                    Tất Cả ({inventoryData.items.length})
-                  </button>
-                  <button
-                    onClick={() => setInvFilter('low_stock')}
                     style={{
-                      padding: '5px 12px',
+                      padding: '6px 12px',
                       fontSize: 12,
                       fontWeight: 700,
                       borderRadius: 6,
                       border: '1px solid #FECACA',
-                      background: invFilter === 'low_stock' ? '#DC2626' : '#FFFFFF',
-                      color: invFilter === 'low_stock' ? '#FFFFFF' : '#DC2626',
-                      cursor: 'pointer'
+                      background: invStatusFilter === 'can_nhap' ? '#DC2626' : '#FFFFFF',
+                      color: invStatusFilter === 'can_nhap' ? '#FFFFFF' : '#DC2626',
+                      cursor: 'pointer',
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: 4
                     }}
                   >
-                    Cần Nhập Gấp ({inventoryData.items.filter(it => it.stock <= it.min_threshold).length})
+                    <span>⚠️ Cần Nhập Gấp ({inventoryData.items.filter(it => it.stock <= it.min_threshold).length})</span>
                   </button>
+                </div>
+              </div>
+
+              {/* THANH TÌM KIẾM & BỘ LỌC KHO NÂNG CAO */}
+              <div style={{ display: 'flex', flexWrap: 'wrap', gap: 10, alignItems: 'center', marginBottom: 18, background: '#F8FAFC', padding: '14px 16px', borderRadius: 10, border: '1px solid #E2E8F0' }}>
+                <div style={{ flex: '1 1 240px', position: 'relative' }}>
+                  <input
+                    type="text"
+                    className="input-field"
+                    placeholder="Tìm theo Tên thiết bị, SKU, Thương hiệu..."
+                    value={invSearch}
+                    onChange={e => setInvSearch(e.target.value)}
+                    style={{ paddingLeft: 34, fontSize: 13, background: '#FFFFFF' }}
+                  />
+                  <Search size={15} style={{ position: 'absolute', left: 11, top: '50%', transform: 'translateY(-50%)', color: '#94A3B8' }} />
+                  {invSearch && (
+                    <button
+                      onClick={() => setInvSearch('')}
+                      style={{ position: 'absolute', right: 10, top: '50%', transform: 'translateY(-50%)', background: 'none', border: 'none', color: '#94A3B8', cursor: 'pointer', padding: 2 }}
+                    >
+                      <X size={14} />
+                    </button>
+                  )}
+                </div>
+
+                <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap', alignItems: 'center' }}>
+                  {/* Lọc Tình trạng tồn */}
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                    <Filter size={14} style={{ color: '#64748B' }} />
+                    <select
+                      className="input-field"
+                      value={invStatusFilter}
+                      onChange={e => setInvStatusFilter(e.target.value)}
+                      style={{ fontSize: 12.5, padding: '7px 12px', background: '#FFFFFF', minWidth: 140 }}
+                    >
+                      <option value="all">Tất cả tình trạng</option>
+                      <option value="can_nhap">Cần nhập gấp (Dưới mức tối thiểu)</option>
+                      <option value="het_hang">Hết hàng (Tồn 0)</option>
+                      <option value="an_toan">Tồn kho an toàn</option>
+                    </select>
+                  </div>
+
+                  {/* Lọc Nhóm sản phẩm */}
+                  <select
+                    className="input-field"
+                    value={invCategoryFilter}
+                    onChange={e => setInvCategoryFilter(e.target.value)}
+                    style={{ fontSize: 12.5, padding: '7px 12px', background: '#FFFFFF', minWidth: 140 }}
+                  >
+                    <option value="all">Tất cả phân loại</option>
+                    {Array.from(new Set(inventoryData.items.map(it => it.category).filter(Boolean))).map(cat => (
+                      <option key={cat} value={cat}>{cat}</option>
+                    ))}
+                  </select>
+
+                  {/* Sắp xếp Kho */}
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                    <ArrowUpDown size={14} style={{ color: '#64748B' }} />
+                    <select
+                      className="input-field"
+                      value={invSort}
+                      onChange={e => setInvSort(e.target.value)}
+                      style={{ fontSize: 12.5, padding: '7px 12px', background: '#FFFFFF', fontWeight: 600, color: '#0F172A', minWidth: 180 }}
+                    >
+                      <option value="stock_asc">Tồn kho: Thấp ➔ Cao (Cần nhập)</option>
+                      <option value="stock_desc">Tồn kho: Cao ➔ Thấp</option>
+                      <option value="val_desc">Giá trị tồn: Cao ➔ Thấp</option>
+                      <option value="name_asc">Tên thiết bị (A - Z)</option>
+                    </select>
+                  </div>
+
+                  {(invSearch || invStatusFilter !== 'all' || invCategoryFilter !== 'all' || invSort !== 'stock_asc') && (
+                    <button
+                      onClick={() => {
+                        setInvSearch('');
+                        setInvStatusFilter('all');
+                        setInvCategoryFilter('all');
+                        setInvSort('stock_asc');
+                      }}
+                      className="btn-secondary"
+                      style={{ fontSize: 12, padding: '7px 12px', color: '#DC2626', borderColor: '#FECACA', background: '#FEF2F2', fontWeight: 700 }}
+                    >
+                      Xóa lọc
+                    </button>
+                  )}
                 </div>
               </div>
 
@@ -3822,9 +4335,16 @@ export default function App() {
                     </tr>
                   </thead>
                   <tbody>
-                    {(inventoryData.items || [])
-                      .filter(it => invFilter === 'all' || it.stock <= it.min_threshold)
-                      .map((it, idx) => (
+                    {filteredInventoryItems.length === 0 ? (
+                      <tr>
+                        <td colSpan={10} style={{ textAlign: 'center', padding: '36px 20px', color: '#94A3B8' }}>
+                          <div style={{ fontSize: 24, marginBottom: 8 }}>🔍</div>
+                          <div style={{ fontSize: 14, fontWeight: 700, color: '#475569' }}>Không tìm thấy thiết bị kho phù hợp với bộ lọc</div>
+                          <div style={{ fontSize: 12, color: '#94A3B8', marginTop: 4 }}>Hãy thử thay đổi từ khóa hoặc bấm "Xóa lọc"</div>
+                        </td>
+                      </tr>
+                    ) : (
+                      filteredInventoryItems.map((it, idx) => (
                         <tr key={idx} style={{ borderBottom: '1px solid #F1F5F9' }}>
                           <td style={{ padding: '12px 14px', fontWeight: 800, color: '#D31027' }}>{it.sku}</td>
                           <td style={{ padding: '12px 14px', fontWeight: 700, color: '#0F172A' }}>{it.name}</td>
@@ -3900,7 +4420,7 @@ export default function App() {
                             </div>
                           </td>
                         </tr>
-                      ))}
+                      )))}
                   </tbody>
                 </table>
               </div>

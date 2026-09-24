@@ -66,17 +66,20 @@ def api_list_contracts():
         from app.core.database import SessionLocal
         from app.models.db_models import Contract as DBContract
         db = SessionLocal()
-        db_contracts = db.query(DBContract).order_by(DBContract.id.desc()).all()
+        db_contracts = db.query(DBContract).order_by(DBContract.contract_code.desc(), DBContract.created_at.desc()).all()
         for c in db_contracts:
             records.append({
                 "id": c.id,
+                "createdTime": c.created_at.isoformat() if c.created_at else "",
                 "fields": {
                     "Ma HD": c.contract_code,
                     "Nguoi ky KH": c.company_name or c.representative or "Khách hàng",
                     "MST KH": c.tax_id or "",
                     "Loai HD": c.contract_type or "Cung cấp thiết bị",
                     "Gia tri HD": c.grand_total or 0,
-                    "Trang thai": c.status or "Cho ky"
+                    "Trang thai": c.status or "Cho ky",
+                    "Ngay tao": c.created_at.strftime("%d/%m/%Y") if c.created_at else "",
+                    "created_at": c.created_at.isoformat() if c.created_at else ""
                 }
             })
         db.close()
@@ -86,6 +89,7 @@ def api_list_contracts():
     # Nếu DB trống thì mới fallback sang Airtable
     if not records:
         records = airtable_client.list_records("Hop dong") or []
+        records.sort(key=lambda r: (r.get("fields", {}).get("Ma HD") or r.get("createdTime") or ""), reverse=True)
 
     redis_client.set("contracts_list", records, expire_seconds=300)
     return records
@@ -162,10 +166,11 @@ def api_list_quotes():
         from app.core.database import SessionLocal
         from app.models.db_models import Quote as DBQuote
         db = SessionLocal()
-        db_quotes = db.query(DBQuote).order_by(DBQuote.id.desc()).all()
+        db_quotes = db.query(DBQuote).order_by(DBQuote.quote_code.desc(), DBQuote.created_at.desc()).all()
         for q in db_quotes:
             records.append({
                 "id": q.id,
+                "createdTime": q.created_at.isoformat() if q.created_at else "",
                 "fields": {
                     "Ma bao gia": q.quote_code,
                     "Ten du an": q.project_name or q.company_name or "Trang bị âm thanh",
@@ -177,7 +182,8 @@ def api_list_quotes():
                     "Tien thue VAT": q.vat_amount or 0,
                     "Trang thai": q.status or "Moi",
                     "Ghi chu": q.notes or "",
-                    "Ngay tao": q.created_at.strftime("%d/%m/%Y") if q.created_at else ""
+                    "Ngay tao": q.created_at.strftime("%d/%m/%Y") if q.created_at else "",
+                    "created_at": q.created_at.isoformat() if q.created_at else ""
                 }
             })
         db.close()
@@ -186,6 +192,7 @@ def api_list_quotes():
 
     if not records:
         records = airtable_client.list_records("Bao gia") or []
+        records.sort(key=lambda r: (r.get("fields", {}).get("Ma bao gia") or r.get("fields", {}).get("Ma BG") or r.get("createdTime") or ""), reverse=True)
 
     redis_client.set("quotes_list", records, expire_seconds=300)
     return records
