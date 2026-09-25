@@ -5,6 +5,19 @@ from typing import Dict, Any
 import docx
 from app.core.config import settings
 
+COMPANY_INFO_REPLACEMENTS = {
+    "Địa chỉ: [để trống]": "Địa chỉ: P.910, Tầng 9, Tòa nhà Mapletree Business Centre, 1060 Nguyễn Văn Linh, Phường Tân Hưng, TP Hồ Chí Minh",
+    "Mã số thuế: [để trống]": "Mã số thuế: 0301719729",
+    "Hotline: [để trống]": "Hotline: 0909 787 040 - 0934 635 766",
+    "CÔNG TY TNHH THƯƠNG MẠI DỊCH VỤ PHÚC THANH": "CÔNG TY TNHH THƯƠNG MẠI - DỊCH VỤ PHÚC THÀNH AN",
+    "{{SELLER_COMPANY_NAME}}": "CÔNG TY TNHH THƯƠNG MẠI - DỊCH VỤ PHÚC THÀNH AN",
+    "{{SELLER_ADDRESS}}": "P.910, Tầng 9, Tòa nhà Mapletree Business Centre, 1060 Nguyễn Văn Linh, Phường Tân Hưng, TP Hồ Chí Minh",
+    "{{SELLER_MST}}": "0301719729",
+    "{{SELLER_HOTLINE}}": "0909 787 040 - 0934 635 766",
+    "{{SELLER_EMAIL}}": "phucthanhaudio@gmail.com",
+    "{{SELLER_WEBSITE}}": "phucthanhaudio.vn",
+}
+
 def _replace_in_paragraph(paragraph, replacements: Dict[str, str]):
     full_text = paragraph.text
     if not full_text:
@@ -24,13 +37,14 @@ def _replace_in_paragraph(paragraph, replacements: Dict[str, str]):
             paragraph.text = full_text
 
 def replace_placeholders_in_doc(doc, replacements: Dict[str, str]):
+    combined = {**COMPANY_INFO_REPLACEMENTS, **replacements}
     for p in doc.paragraphs:
-        _replace_in_paragraph(p, replacements)
+        _replace_in_paragraph(p, combined)
     for table in doc.tables:
         for row in table.rows:
             for cell in row.cells:
                 for p in cell.paragraphs:
-                    _replace_in_paragraph(p, replacements)
+                    _replace_in_paragraph(p, combined)
 
 def generate_contract_document(data: Dict[str, Any]) -> str:
     """
