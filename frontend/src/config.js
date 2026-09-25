@@ -27,5 +27,5 @@ export const getPublicIntakeUrl = () => {
 
 // 5. Cấu hình xác thực Quản Trị Viên (Bảo mật cao)
 export const ADMIN_EMAIL = import.meta.env.VITE_ADMIN_EMAIL || 'admin@phucthanhaudio.vn';
-export const ADMIN_PASSWORD = import.meta.env.VITE_ADMIN_PASSWORD || 'PTAudio@Pro#2026';
+export const ADMIN_PASSWORD = import.meta.env.VITE_ADMIN_PASSWORD || 'PhucThanh@';
 
