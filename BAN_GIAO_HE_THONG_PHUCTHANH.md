@@ -1,289 +1,189 @@
-# TÀI LIỆU BÀN GIAO HỆ THỐNG & HƯỚNG DẪN VẬN HÀNH
-## HỆ THỐNG TỰ ĐỘNG HÓA KINH DOANH & QUẢN TRỊ ERP — PHÚC THANH AUDIO GROUP
+# CỘNG HÒA XÃ HỘI CHỦ NGHĨA VIỆT NAM
+### Độc lập - Tự do - Hạnh phúc
+---
 
-*Phiên bản bàn giao: 2.0 (Chính thức)*  
-*Thời gian bàn giao: Tháng 09/2026*  
-*Đơn vị phát triển: Antigravity AI Engineering Team*  
-*Đơn vị tiếp nhận: Ban Giám Đốc & Khối Vận Hành — CÔNG TY TNHH THƯƠNG MẠI - DỊCH VỤ PHÚC THÀNH AN*
+# BIÊN BẢN BÀN GIAO HỆ THỐNG PHẦN MỀM & HƯỚNG DẪN SỬ DỤNG
+### DỰ ÁN: HỆ THỐNG QUẢN TRỊ KINH DOANH & TỰ ĐỘNG HÓA VẬN HÀNH PHÚC THANH AUDIO
+
+- *Căn cứ vào Hợp đồng / Thỏa thuận phát triển hệ thống phần mềm quản trị doanh nghiệp;*
+- *Căn cứ vào kết quả kiểm thử thực tế và nghiệm thu các tính năng phần mềm.*
+
+Hôm nay, ngày 25 tháng 09 năm 2026, chúng tôi gồm có:
+
+### BÊN BÀN GIAO (BÊN PHÁT TRIỂN HỆ THỐNG):
+- **Đơn vị:** Đội ngũ Kỹ thuật & Phát triển Phần mềm
+- **Đại diện:** Trưởng bộ phận Triển khai Dự án
+
+### BÊN TIẾP NHẬN (KHÁCH HÀNG):
+- **Đơn vị tiếp nhận:** **CÔNG TY TNHH THƯƠNG MẠI - DỊCH VỤ PHÚC THÀNH AN**
+- **Thương hiệu:** Phúc Thanh Audio Group / Siêu Thanh Audio
+- **Mã số thuế:** `0301719729`
+- **Địa chỉ:** P.910, Tầng 9, Tòa nhà Mapletree Business Centre, 1060 Nguyễn Văn Linh, P. Tân Hưng, TP. Hồ Chí Minh
+- **Đại diện tiếp nhận:** Ban Giám Đốc Phúc Thanh Audio
+
+Hai bên cùng thống nhất ký kết Biên bản bàn giao hệ thống phần mềm với các nội dung chi tiết dưới đây:
 
 ---
 
-## 📌 MỤC LỤC
-1. [Thông Tin Pháp Nhân & Hạ Tầng Triển Khai](#1-thông-tin-pháp-nhân--hạ-tầng-triển-khai)
-2. [Bàn Giao Tài Khoản Quản Trị & Phân Quyền](#2-bàn-giao-tài-khoản-quản-trị--phân-quyền)
-3. [Kiến Trúc Kỹ Thuật Hệ Thống (Architecture)](#3-kiến-trúc-kỹ-thuật-hệ-thống)
-4. [Hướng Dẫn Sử Dụng Chi Tiết 8 Phân Hệ Nghiệp Vụ](#4-hướng-dẫn-sử-dụng-chi-tiết-8-phân-hệ-nghiệp-vụ)
-   - [NV1: Quản Lý & Soạn Thảo Hợp Đồng Kinh Tế](#nv1-quản-lý--soạn-thảo-hợp-đồng-kinh-tế)
-   - [NV2: Lập Báo Giá Dự Án Thiết Bị Âm Thanh](#nv2-lập-báo-giá-dự-án-thiết-bị-âm-thanh)
-   - [NV3: Quản Lý Khách Hàng & Cơ Hội Bán Hàng (CRM Pipeline)](#nv3-quản-lý-khách-hàng--cơ-hội-bán-hàng-crm-pipeline)
-   - [NV4: Thông Báo Tự Động Khách Hàng Qua Zalo (ZNS / ZBS)](#nv4-thông-báo-tự-động-khách-hàng-qua-zalo-zns--zbs)
-   - [NV5: Dịch Vụ Tiếp Nhận & Bảo Hành Thiết Bị (RMA)](#nv5-dịch-vụ-tiếp-nhận--bảo-hành-thiết-bị-rma)
-   - [NV6: Quản Lý Kho & Cảnh Báo Tồn Hàng Dự Trữ](#nv6-quản-lý-kho--cảnh-báo-tồn-hàng-dự-trữ)
-   - [NV7: Báo Cáo Điều Hành & Biểu Đồ Doanh Thu (CEO Dashboard)](#nv7-báo-cáo-điều-hành--biểu-đồ-doanh-thu-ceo-dashboard)
-   - [NV8: Cổng Tiếp Nhận Tư Vấn Khách Hàng Công Cộng (Public Intake)](#nv8-cổng-tiếp-nhận-tư-vấn-khách-hàng-công-cộng-public-intake)
-5. [Quy Trình Chuẩn Vận Hành Hàng Ngày (SOP)](#5-quy-trình-chuẩn-vận-hành-hàng-ngày-sop)
-6. [Hướng Dẫn Quản Trị Hệ Thống, Sao Lưu & Bảo Trì Server](#6-hướng-dẫn-quản-trị-hệ-thống-sao-lưu--bảo-trì-server)
-7. [Biên Bản Xác Nhận Bàn Giao](#7-biên-bản-xác-nhận-bàn-giao)
+## PHẦN 1: THÔNG TIN TRUY CẬP & BÀN GIAO TÀI KHOẢN
 
----
+Kính gửi Quý Khách hàng danh sách các cổng truy cập chính thức của hệ thống đã được cấu hình hoạt động 24/7 trên môi trường máy chủ:
 
-## 1. THÔNG TIN PHÁP NHÂN & HẠ TẦNG TRIỂN KHAI
-
-### 1.1. Thông Tin Pháp Nhân Chuẩn Hóa Trên Toàn Hệ Thống
-Toàn bộ phôi tài liệu Word (.docx), báo giá, hợp đồng và API đã được liên kết đồng bộ với pháp nhân chính thức của công ty:
-- **Tên Doanh Nghiệp:** CÔNG TY TNHH THƯƠNG MẠI - DỊCH VỤ PHÚC THÀNH AN
-- **Thương Hiệu Giao Dịch:** Phúc Thanh Audio Group / Siêu Thanh Audio
-- **Mã Số Thuế (MST):** `0301719729`
-- **Địa Chỉ Đăng Ký Trụ Sở:** P.910, Tầng 9, Tòa nhà Mapletree Business Centre, 1060 Nguyễn Văn Linh, Phường Tân Hưng, TP. Hồ Chí Minh
-- **Đại Diện Pháp Luật:** Ông Đinh Quang Phong — Giám Đốc
-- **Hotline Hỗ Trợ:** `0909 787 040` — `0934 635 766`
-- **Hộp Thư Điện Tử:** `phucthanhaudio@gmail.com`
-- **Website Chính Thức:** `https://phucthanhaudio.vn`
-
-### 1.2. Đường Dẫn Truy Cập Hệ Thống (Production URLs)
-| Hạng Mục | Đường Dẫn (URL) | Mục Đích Sử Dụng |
+### 1.1. Các Đường Link Truy Cập Hệ Thống
+| Tên Cổng Dịch Vụ | Đường Dẫn (Link Truy Cập) | Mục Đích Sử Dụng |
 |---|---|---|
-| **Cổng Quản Trị Web ERP** | `https://phucthanhaudio.wiai.vn/` | Dành cho Ban Giám Đốc, Kế toán, Sales, Kỹ thuật viên, Thủ kho đăng nhập làm việc |
-| **Cổng Tiếp Nhận Khách Hàng** | `https://phucthanhaudio.wiai.vn/intake` | Form đăng ký tư vấn giải pháp âm thanh công cộng gửi khách hàng hoặc nhúng vào website |
-| **Cổng Dịch Vụ API Backend** | `https://apiphucthanhaudio.wiai.vn/` | Máy chủ xử lý dữ liệu FastAPI, sinh tài liệu Word, tra MST |
-| **Tài Liệu Kỹ Thuật Swagger API** | `https://apiphucthanhaudio.wiai.vn/docs` | Tra cứu chi tiết từng endpoint, payload JSON phục vụ tích hợp |
-| **Cơ Sở Dữ Liệu Airtable Cloud** | `https://airtable.com/applSd5Z3mQyCsKxN` | Cơ sở dữ liệu đám mây 10 bảng đồng bộ 2 chiều |
-| **Kho Lưu Trữ Mã Nguồn GitHub** | `https://github.com/Ryhtruly/PhucThanhAudio` | Quản lý mã nguồn, tự động deploy qua CI/CD GitHub Actions |
+| **Cổng Quản Trị Doanh Nghiệp (ERP)** | [**https://phucthanhaudio.wiai.vn/**](https://phucthanhaudio.wiai.vn/) | Dành cho Ban Giám Đốc, Kế toán, Nhân viên Kinh doanh, Kỹ thuật và Thủ kho đăng nhập làm việc hàng ngày. |
+| **Cổng Đăng Ký Dành Cho Khách Hàng** | [**https://phucthanhaudio.wiai.vn/intake**](https://phucthanhaudio.wiai.vn/intake) | Link form trực tuyến gửi cho khách hàng tiềm năng đăng ký tư vấn âm thanh hoặc gắn lên Website/Fanpage công ty. |
+| **Cơ Sở Dữ Liệu Đám Mây (Airtable)** | [**Truy Cập Airtable Base**](https://airtable.com/applSd5Z3mQyCsKxN) | Dữ liệu được sao lưu và đồng bộ tức thì lên đám mây để xem dạng bảng biểu Excel/Sheets. |
 
 ---
 
-## 2. BÀN GIAO TÀI KHOẢN QUẢN TRỊ & PHÂN QUYỀN
+### 1.2. Bàn Giao Tài Khoản Đăng Nhập
+Hệ thống bàn giao cho Quý Công ty tài khoản Quản trị cấp cao nhất (toàn quyền hệ thống):
 
-### 2.1. Tài Khoản Quản Trị Viên Cấp Cao (Admin Master)
-Hệ thống sử dụng cơ chế xác thực JWT kết hợp mã hóa bảo mật:
-- **Tài khoản đăng nhập:** `admin@phucthanhaudio.vn`
-- **Mật khẩu khởi tạo:** `PhucThanh@` *(Khuyến cáo Ban Giám Đốc đổi mật khẩu ngay sau khi tiếp nhận bàn giao tại mục Cài đặt)*
-- **Quyền hạn:** Toàn quyền kiểm soát hệ thống (Xem báo cáo tài chính doanh thu, ký duyệt hợp đồng, xuất hóa đơn, thêm/sửa/xóa thiết bị trong kho, phân công nhân sự).
+* **Địa chỉ đăng nhập:** [https://phucthanhaudio.wiai.vn/](https://phucthanhaudio.wiai.vn/)
+* **Email / Tên đăng nhập:** `admin@phucthanhaudio.vn`
+* **Mật khẩu khởi tạo:** `PhucThanh@`
+* **Phân quyền:** Quản trị viên cấp cao (Admin Master — Toàn quyền kiểm soát, phê duyệt hợp đồng, quản lý bảng giá, xem doanh thu).
 
-### 2.2. Ma Trận Phân Quyền Nhân Sự Theo Vai Trò
-| Vai Trò | Nhân Sự Mẫu | Phân Hệ Được Truy Cập | Trách Nhiệm Chính |
-|---|---|---|---|
-| **Ban Giám Đốc (CEO / Admin)** | Đinh Quang Phong | Toàn bộ 8 phân hệ | Theo dõi KPI, duyệt hợp đồng, quyết định mức chiết khấu |
-| **Kỹ Sư Bán Hàng (Sales Rep)** | Nguyễn Văn Tuấn | Báo giá, Hợp đồng, CRM Lead | Lập báo giá, theo dõi phễu khách hàng, sinh hợp đồng |
-| **Kỹ Thuật Viên (Technician)** | Trần Minh Đức | Dịch vụ & Bảo hành (RMA) | Tiếp nhận thiết bị sửa chữa, cập nhật biên bản hoàn thành |
-| **Thủ Kho (Warehouse Staff)** | Nguyễn Văn Nam | Kho hàng & Thiết bị | Quản lý SKU, thực hiện nhập/xuất kho, theo dõi định mức tồn |
+> 🔒 **Lưu ý bảo mật quan trọng:** Để đảm bảo tính an toàn dữ liệu, sau khi nhận bàn giao và đăng nhập lần đầu, Ban Giám Đốc vui lòng vào biểu tượng tài khoản góc trên bên phải để thực hiện đổi mật khẩu nội bộ.
 
 ---
 
-## 3. KIẾN TRÚC KỸ THUẬT HỆ THỐNG
+## PHẦN 2: DANH MỤC CÁC CHỨC NĂNG ĐÃ HOÀN THIỆN & NGHIỆM THU
 
-```
-[Khách Hàng / Nhân Viên]
-        │
-        ├──► Web ERP Frontend (React 18 + Vite + Glassmorphism UI)
-        │       │
-        │       ▼
-        ├──► Backend API Gateway (FastAPI 0.111 + Python 3.11/3.12)
-        │       ├── Redis Cache Engine (Tối ưu tốc độ phản hồi < 50ms)
-        │       ├── SQLite Database (phucthanh.db - Lưu trữ nội bộ an toàn)
-        │       ├── Airtable Cloud Base (applSd5Z3mQyCsKxN - Đồng bộ đám mây)
-        │       ├── Document Generator (python-docx - Xuất văn bản .docx chuẩn)
-        │       ├── VietQR & MST API (Tự động tra cứu mã số thuế doanh nghiệp)
-        │       └── Zalo ZBS / ZNS Gateway (Gửi thông báo tự động tới khách hàng)
-```
+Hệ thống được thiết kế riêng biệt theo quy trình chuẩn của ngành âm thanh ánh sáng chuyên nghiệp, bao gồm **8 phân hệ nghiệp vụ hoàn chỉnh**:
 
-- **Lưu trữ dữ liệu 3 tầng (Triple-layer Redundancy):**
-  1. *SQLite Local:* Đảm bảo hệ thống vẫn hoạt động siêu tốc ngay cả khi mất kết nối mạng Internet.
-  2. *Redis In-memory:* Tự động cache các danh sách Hợp đồng, Báo giá, KPI; tự động xóa cache (invalidation) ngay khi có giao dịch mới phát sinh.
-  3. *Airtable Cloud:* Đồng bộ 2 chiều để khối văn phòng có thể xem và cộng tác trực tiếp trên bảng biểu Google Sheets / Airtable.
-- **Hệ thống sinh tài liệu thông minh:**
-  Tự động thay thế hàng trăm placeholder, tự động chuyển đổi số tiền thành chữ tiếng Việt chuẩn xác (ví dụ: *Hai trăm bảy mươi lăm triệu đồng chẵn*), tự động canh lề bảng sản phẩm và điền đầy đủ thông tin pháp nhân Phúc Thanh Audio.
+| STT | Phân Hệ Nghiệp Vụ | Trạng Thái Bàn Giao | Mô Tả Nghiệp Vụ |
+|:---:|---|:---:|---|
+| **1** | **Quản Lý Hợp Đồng Kinh Tế** | ✅ Hoàn thành 100% | Tự động tra cứu MST công ty, tùy chỉnh VAT (10%, 8%, 5%, 0%), chọn giá trọn gói hoặc chưa thuế, sinh mã HĐ tự động, xuất file Word (.docx) chuẩn pháp lý, ký duyệt hợp đồng ghi nhận doanh thu. |
+| **2** | **Lập Báo Giá Dự Án (Quote Studio)** | ✅ Hoàn thành 100% | Chọn thiết bị từ bảng giá, tăng giảm số lượng, chiết khấu dự án, chỉnh % VAT linh hoạt, tự động sinh mã báo giá và tải file Word (.docx) chuẩn ISO đã điền sẵn 100% thông tin công ty Phúc Thanh. |
+| **3** | **Quản Lý Cơ Hội & Khách Hàng (CRM)** | ✅ Hoàn thành 100% | Bảng Kanban 5 bước quản lý phễu khách hàng. **Đặc biệt:** Kéo khách vào cột "Chốt Thành Công (Won)" sẽ tự động sinh Hợp đồng kinh tế tương ứng. |
+| **4** | **Kho Hàng & Cảnh Báo Thiết Bị** | ✅ Hoàn thành 100% | Quản lý mã SKU (`PT-xxxx`), giá nhập vốn, giá niêm yết, số lượng tồn. Tự động cảnh báo thiết bị "Cần nhập gấp" hoặc "Hết hàng". Hỗ trợ nhập/xuất kho nhanh, thêm, sửa, xóa sản phẩm. |
+| **5** | **Dịch Vụ & Tiếp Nhận Bảo Hành (RMA)** | ✅ Hoàn thành 100% | Tiếp nhận thiết bị hư hỏng, phân công kỹ thuật viên phụ trách, cập nhật tiến độ sửa chữa và nghiệm thu hoàn thành. |
+| **6** | **Báo Cáo Điều Hành & Biểu Đồ (CEO)** | ✅ Hoàn thành 100% | Báo cáo doanh thu 3 tầng kế toán chuẩn: Doanh thu thực đạt (đã ký) · Dự thu chờ ký · Tổng quy mô. Biểu đồ xu hướng kinh doanh với bộ lọc theo kỳ và góc nhìn doanh số. |
+| **7** | **Bộ Lọc & Sắp Xếp Toàn Hệ Thống** | ✅ Hoàn thành 100% | Hợp đồng và báo giá luôn sắp xếp thời gian mới nhất lên đầu. Thanh tìm kiếm đa năng theo mã, tên khách hàng, số điện thoại, MST và tình trạng kho. |
+| **8** | **Cổng Đăng Ký Tư Vấn Công Cộng** | ✅ Hoàn thành 100% | Form tiếp nhận nhu cầu Karaoke VIP, Hội trường, Bar/Club, PA Cafe trực tuyến tự động chuyển về CRM cho nhân viên kinh doanh liên hệ. |
 
 ---
 
-## 4. HƯỚNG DẪN SỬ DỤNG CHI TIẾT 8 PHÂN HỆ NGHIỆP VỤ
-
-### NV1: Quản Lý & Soạn Thảo Hợp Đồng Kinh Tế
-*Vị trí trên thanh điều hướng:* **Quản Lý Hợp Đồng**
-
-#### Các bước tạo hợp đồng mới:
-1. Nhập **Mã số thuế bên mua** (ví dụ: `0301719729`, `0101248141`,...) và bấm nút **"Tra Cứu Pháp Nhân"**.
-   - *Hệ thống tự động điền Tên doanh nghiệp và Địa chỉ trụ sở từ Cơ sở dữ liệu Quốc gia.*
-2. Nhập **Số điện thoại** người ký và lựa chọn **Loại hợp đồng** (Cung cấp thiết bị / Lắp đặt trọn gói Karaoke VIP / Âm thanh hội thảo...).
-3. Nhập **Giá trị hợp đồng** và cấu hình **Thuế VAT**:
-   - Tích chọn hoặc bỏ chọn *Xuất hóa đơn thuế GTGT (VAT)*.
-   - Chọn mức thuế suất linh hoạt: **`10% (Chuẩn)`**, **`8% (Ưu đãi)`**, **`5%`**, **`0%`** hoặc gõ số % tự do.
-   - Chọn phương thức tính: **"Giá chưa thuế (+ X% VAT)"** hoặc **"Giá trọn gói (Đã gồm VAT)"**.
-   - Bảng tính tiền minh bạch (*Live Breakdown*) sẽ tự động bóc tách doanh thu thuần trước thuế và tiền thuế tương ứng.
-4. Bấm **"Tạo Hợp Đồng & Tải File (.docx)"**:
-   - Hệ thống tự sinh mã chuẩn duy nhất `HD-YYYYMMDD-HHMMSSxxx`.
-   - File Word `.docx` hoàn chỉnh được tự động tải về máy tính để in ấn hoặc trình ký.
-5. **Ký duyệt hợp đồng:** Tại danh sách bên dưới, bấm nút **"Ký Duyệt"** đối với các hợp đồng đã hoàn tất ký kết để hệ thống chuyển trạng thái sang `Đã ký` và ghi nhận Doanh thu thực đạt vào sổ sách kế toán.
-6. **Bộ lọc & Sắp xếp:** Sử dụng thanh công cụ tìm kiếm theo Mã HĐ, tên công ty, MST; lọc trạng thái Chờ ký / Đã ký; mặc định danh sách luôn **sắp xếp hợp đồng mới nhất lên hàng đầu**.
+## PHẦN 3: HƯỚNG DẪN SỬ DỤNG CHI TIẾT DÀNH CHO NHÂN VIÊN & QUẢN TRỊ VIÊN
 
 ---
 
-### NV2: Lập Báo Giá Dự Án Thiết Bị Âm Thanh
-*Vị trí trên thanh điều hướng:* **Báo Giá Dự Án**
-
-#### Các bước lập báo giá tiêu chuẩn ISO:
-1. Nhập thông tin khách hàng tại khung bên trái: Tên công ty, Người liên hệ, SĐT, Tên dự án.
-2. Tại khung **Danh Mục Thiết Bị**, bấm chọn các sản phẩm cần đưa vào báo giá (Loa sân khấu SR Italy, Cục đẩy công suất Crown, Vang số, Micro,...).
-3. Tại khung **Chi Tiết Báo Giá**:
-   - Điều chỉnh số lượng tăng/giảm bằng nút `+` hoặc `-`.
-   - Bấm biểu tượng thùng rác để xóa sản phẩm khỏi cấu hình nếu cần.
-4. Cấu hình **Thuế VAT**:
-   - Tích chọn *Xuất Hóa Đơn Thuế GTGT (VAT)*.
-   - Chọn mức thuế: `10%`, `8%`, `5%`, `0%` hoặc tự nhập số % mong muốn.
-   - Hệ thống tự động tính: Cộng tiền hàng ➔ Thuế GTGT (VAT X%) ➔ Tổng thanh toán.
-5. Bấm **"Lưu & Xuất Báo Giá (.docx)"**:
-   - Hệ thống tự cấp mã báo giá dạng `BG-YYYYMMDD-HHMMSSxxx`.
-   - File văn bản Báo giá chuẩn ISO tự động tải về với đầy đủ thông tin pháp nhân Phúc Thanh (MST `0301719729`, Hotline, Địa chỉ trụ sở, Email, Website) — tuyệt đối không còn trường `[để trống]`.
-6. **Quản lý danh sách báo giá:** Phía dưới có thanh tìm kiếm theo tên dự án, khách hàng, số điện thoại và nút xem/tải lại file Word bất kỳ lúc nào.
+### BƯỚC 1: ĐĂNG NHẬP VÀO HỆ THỐNG
+1. Mở trình duyệt web (Google Chrome, Cốc Cốc, Safari, Microsoft Edge) trên máy tính hoặc điện thoại.
+2. Truy cập đường link: [**https://phucthanhaudio.wiai.vn/**](https://phucthanhaudio.wiai.vn/)
+3. Nhập email: `admin@phucthanhaudio.vn` và mật khẩu: `PhucThanh@`
+4. Bấm **"Đăng Nhập Quản Trị"** để vào màn hình làm việc chính.
 
 ---
 
-### NV3: Quản Lý Khách Hàng & Cơ Hội Bán Hàng (CRM Pipeline)
-*Vị trí trên thanh điều hướng:* **Khách Hàng & Cơ Hội**
+### BƯỚC 2: HƯỚNG DẪN TẠO BÁO GIÁ DỰ ÁN & XUẤT FILE WORD
+*Mục đích: Lập dự toán âm thanh cho khách hàng, tự động tính tiền và in/gửi báo giá đẹp mắt, chuyên nghiệp.*
 
-- **Giao diện bảng Kanban 5 cột chuẩn quốc tế:**
-  1. `Khách Hàng Mới (New)` — Nhu cầu mới tiếp nhận.
-  2. `Đã Thẩm Định (Qualified)` — Đã khảo sát mặt bằng, xác định ngân sách.
-  3. `Đang Đàm Phán (Dam phan)` — Đang gửi báo giá và chốt phương án kỹ thuật.
-  4. `Chốt Thành Công (Won)` — Khách đồng ý ký kết.
-  5. `Thất Bại (Lost)` — Hủy dự án hoặc chuyển đơn vị khác.
-- **Tính năng tự động sinh Hợp đồng (Won ➔ Contract Automation):**
-  Khi kéo thả thẻ khách hàng từ bất kỳ cột nào sang cột **"Chốt Thành Công (Won)"**, hệ thống tự động:
-  - Khởi tạo ngay 1 Hợp đồng kinh tế mới trong CSDL.
-  - Cập nhật doanh thu dự án vào phễu tài chính.
-  - Gửi thông báo chúc mừng tới bộ phận kinh doanh.
-- Bấm **"+ Thêm Khách Hàng Mới"** để tạo hồ sơ khách hàng thủ công khi tiếp nhận qua điện thoại.
-
----
-
-### NV4: Thông Báo Tự Động Khách Hàng Qua Zalo (ZNS / ZBS)
-*Vị trí trên thanh điều hướng:* **Thông Báo Zalo (ZNS)**
-
-- Tích hợp cổng kết nối Zalo Notification Service (ZBS WIFIM):
-  - Gửi thông báo hợp đồng đã phát hành kèm liên kết tải file.
-  - Gửi thông báo báo giá dự án gửi tới số điện thoại khách hàng.
-  - Gửi thông báo lịch hẹn bảo hành, bảo trì định kỳ hệ thống âm thanh.
-- Cho phép kiểm tra trạng thái gửi tin theo thời gian thực (Đã gửi, Đang xử lý, Thất bại).
+1. Trên menu đầu trang, bấm vào mục **"Báo Giá Dự Án"**.
+2. **Điền thông tin khách hàng:**
+   - Tên công ty / khách hàng (Ví dụ: *Anh Tuấn - Karaoke VIP Dragon*).
+   - Người liên hệ, Số điện thoại nhận Zalo, Tên dự án.
+3. **Chọn thiết bị vào báo giá:**
+   - Tại cột **"Danh Mục Thiết Bị Âm Thanh"**, bấm vào các thiết bị cần báo giá (Loa full, Sub hơi, Cục đẩy công suất, Vang số, Micro...).
+   - Bên cột **"Chi Tiết Báo Giá"**, bấm nút `+` hoặc `-` để tăng giảm số lượng theo nhu cầu thực tế của công trình.
+4. **Cấu hình thuế VAT:**
+   - Bấm chọn thuế suất: **10% (Chuẩn)**, **8% (Ưu đãi)**, **5%** hoặc nhập số % thuế theo thỏa thuận với khách.
+   - Bảng tính bên dưới sẽ tự động hiển thị: Tiền hàng ➔ Tiền thuế VAT ➔ Tổng tiền thanh toán.
+5. **Xuất file Word:**
+   - Bấm nút **"Lưu & Xuất Báo Giá (.docx)"**.
+   - File văn bản Báo giá chuẩn sẽ tự động tải về máy tính của bạn. Mở file Word ra, bạn sẽ thấy thông tin pháp nhân Phúc Thanh Audio (Mã số thuế `0301719729`, Hotline, Địa chỉ, Email, Website) và bảng sản phẩm đã được điền đầy đủ, ngay ngắn, sẵn sàng in hoặc gửi file cho khách.
 
 ---
 
-### NV5: Dịch Vụ Tiếp Nhận & Bảo Hành Thiết Bị (RMA)
-*Vị trí trên thanh điều hướng:* **Dịch Vụ & Bảo Hành**
+### BƯỚC 3: HƯỚNG DẪN SOẠN THẢO VÀ DUYỆT HỢP ĐỒNG KINH TẾ
+*Mục đích: Lập hợp đồng mua bán, lắp đặt thiết bị âm thanh chuẩn pháp lý trong vòng 30 giây.*
 
-- Quản lý toàn diện vòng đời sửa chữa, bảo hành thiết bị âm thanh:
-  - Tiếp nhận thiết bị: Tên thiết bị, Số Serial, Tên khách hàng, Hiện tượng lỗi, Mức độ ưu tiên (Thường / Gấp).
-  - Phân công kỹ thuật viên phụ trách (Trần Minh Đức, Lê Hoàng Nam,...).
-  - Cập nhật tiến độ xử lý và bấm **"Hoàn thành"** khi đã nghiệm thu bàn giao lại cho khách.
-- Dữ liệu phiếu bảo hành tự động liên kết với Form đăng ký công cộng tại `/intake`.
-
----
-
-### NV6: Quản Lý Kho & Cảnh Báo Tồn Hàng Dự Trữ
-*Vị trí trên thanh điều hướng:* **Kho Hàng & Thiết Bị**
-
-- **Quản lý danh mục thiết bị:** Mã SKU (dạng `PT-xxxx`), Tên thiết bị, Thương hiệu, Đơn vị tính, Giá nhập vốn, Giá bán niêm yết, Số lượng tồn, Ngưỡng tồn tối thiểu.
-- **Thanh tìm kiếm & Bộ lọc kho thông minh:**
-  - Tìm nhanh theo tên thiết bị, mã SKU hoặc thương hiệu (SR Italy, Crown, JBL,...).
-  - Lọc theo tình trạng: *Tất cả*, *Cần nhập gấp* (Tồn dưới mức tối thiểu), *Hết hàng* (Tồn = 0), *Tồn an toàn*.
-  - Lọc theo phân loại: Loa, Cục đẩy công suất, Vang số / DSP, Micro,...
-  - Sắp xếp theo số lượng tồn tăng dần/giảm dần, tổng giá trị tồn kho.
-- **Thao tác nhanh:**
-  - **Nhập/Xuất kho:** Bấm nút "Nhập/Xuất" trên từng dòng sản phẩm để cộng/trừ số lượng kèm ghi chú lý do.
-  - **Sửa thiết bị:** Cập nhật lại giá bán, giá nhập, định mức an toàn.
-  - **Xóa thiết bị:** Xóa thiết bị thử nghiệm ra khỏi hệ thống chỉ với 1 click.
-  - **Thêm thiết bị mới:** Bấm "+ Thêm Thiết Bị Mới" để mở rộng danh mục hàng hóa.
+1. Bấm vào mục **"Quản Lý Hợp Đồng"** trên menu.
+2. **Tra cứu pháp nhân tự động:**
+   - Nhập **Mã số thuế** của khách hàng doanh nghiệp vào ô và bấm **"Tra Cứu Pháp Nhân"**.
+   - *Hệ thống tự động kết nối với Cơ sở dữ liệu Quốc gia để điền Tên công ty và Địa chỉ đăng ký kinh doanh chính xác 100%.*
+3. **Cấu hình giá trị và thuế:**
+   - Nhập số điện thoại người đại diện ký hợp đồng.
+   - Chọn loại hợp đồng (Cung cấp thiết bị / Lắp đặt trọn gói Karaoke VIP...).
+   - Nhập giá trị hợp đồng.
+   - Chọn mức thuế VAT (10%, 8%, 5%...).
+   - Chọn phương thức: **"Giá chưa thuế (+ VAT)"** hoặc **"Giá trọn gói (Đã gồm VAT)"**. Hệ thống sẽ tự động bóc tách doanh thu thực trước thuế cho bạn.
+4. **Tải file hợp đồng:**
+   - Bấm **"Tạo Hợp Đồng & Tải File (.docx)"**.
+   - File hợp đồng hoàn chỉnh kèm số hợp đồng duy nhất sẽ được tải về để in ký.
+5. **Ký duyệt ghi nhận doanh thu:**
+   - Khi khách hàng đã ký hợp đồng thực tế, bạn kéo xuống bảng danh sách hợp đồng phía dưới và bấm nút **"Ký Duyệt"**.
+   - Hợp đồng chuyển sang trạng thái `Đã ký` và số tiền hợp đồng sẽ được tính chính thức vào **Doanh Thu Thực Đạt** trên biểu đồ của Ban Giám Đốc.
 
 ---
 
-### NV7: Báo Cáo Điều Hành & Biểu Đồ Doanh Thu (CEO Dashboard)
-*Vị trí trên thanh điều hướng:* **Tổng Quan Điều Hành**
-
-- **Báo cáo chuẩn tài chính 3 tầng minh bạch:**
-  1. **Doanh thu thuần thực đạt:** Tổng giá trị các hợp đồng đã ký kết chính thức và bàn giao.
-  2. **Dự thu Pipeline:** Tổng giá trị các hợp đồng đang chờ ký duyệt hoặc cơ hội bán hàng tiềm năng.
-  3. **Tổng quy mô kinh doanh:** Tổng hợp toàn bộ nguồn vốn dự án đang vận hành.
-- **Biểu đồ xu hướng doanh thu (Spline Area Chart):**
-  - Trực quan hóa đường cong doanh thu thực tế so sánh với đường chỉ tiêu doanh số hàng tháng.
-- **Bộ lọc động cho Ban Giám Đốc:**
-  - *Góc nhìn doanh số:* Chuyển đổi linh hoạt giữa "Toàn bộ quy mô", "Doanh thu thực đạt (HĐ Đã ký)", "Dự thu pipeline (HĐ Chờ ký)".
-  - *Kỳ báo cáo:* Lọc riêng theo Tháng 9/2026, Tháng 8/2026 hoặc toàn bộ các kỳ.
-  - Khi thay đổi bộ lọc, thẻ KPI và biểu đồ sẽ tự động chuyển động cập nhật số liệu tương ứng.
+### BƯỚC 4: HƯỚNG DẪN QUẢN LÝ KHÁCH HÀNG & PHỄU BÁN HÀNG (CRM)
+1. Bấm vào mục **"Khách Hàng & Cơ Hội"**.
+2. Màn hình hiển thị 5 cột trạng thái: *Khách Mới ➔ Đã Thẩm Định ➔ Đang Đàm Phán ➔ Chốt Thành Công ➔ Thất Bại*.
+3. Khi chăm sóc khách hàng, nhân viên kinh doanh chỉ cần **kéo thả thẻ khách hàng** từ cột này sang cột khác.
+4. **Tính năng tự động hóa vượt trội:** Khi kéo khách hàng sang cột **"Chốt Thành Công (Won)"**, hệ thống sẽ tự động tạo ngay một Hợp đồng mới trong danh sách hợp đồng mà nhân viên không cần phải gõ lại thông tin từ đầu.
 
 ---
 
-### NV8: Cổng Tiếp Nhận Tư Vấn Khách Hàng Công Cộng (Public Intake)
-*Đường dẫn truy cập trực tiếp:* `https://phucthanhaudio.wiai.vn/intake`
-
-- Giao diện thiết kế theo phong cách hiện đại (Dark Glassmorphism, Responsive trên điện thoại di động):
-  - Khách hàng tự chọn nhóm nhu cầu: Karaoke VIP kinh doanh, Âm thanh sân khấu / Hội trường ngoài trời, Bar / Vũ trường / Lounge cao cấp, Hệ thống PA Cafe & Nhà hàng.
-  - Khách hàng nhập tên đơn vị, người liên hệ, số điện thoại, ngân sách dự kiến và yêu cầu kỹ thuật.
-- Khi khách hàng bấm **"Gửi Yêu Cầu Tư Vấn & Báo Giá"**:
-  - Dữ liệu tức thì chuyển về CSDL Backend và tạo mới một thẻ tại cột `Khách Hàng Mới (New)` trên CRM Pipeline.
-  - Nhân viên kinh doanh nhận được thông tin để liên hệ tư vấn trong vòng 15 phút.
-
----
-
-## 5. QUY TRÌNH CHUẨN VẬN HÀNH HÀNG NGÀY (SOP)
-
-```mermaid
-graph TD
-    A[Khách hàng gửi nhu cầu qua Web Intake / Hotline] --> B[Sales nhận thông tin trên CRM Pipeline]
-    B --> C[Tư vấn cấu hình & Tạo Báo Giá ISO tại Tab Báo Giá]
-    C --> D[Gửi Báo Giá .docx & Zalo cho Khách hàng]
-    D --> E{Khách hàng chốt?}
-    E -- Có --> F[Kéo thẻ sang Won -> Tự sinh Hợp đồng kinh tế]
-    E -- Điều chỉnh --> C
-    F --> G[Tra cứu MST -> Xuất HĐ .docx ký kết]
-    G --> H[Thủ kho xuất thiết bị tại Tab Kho Hàng]
-    H --> I[Kỹ thuật lắp đặt & Khởi tạo phiếu RMA nếu bảo hành]
-    I --> J[Ký duyệt HĐ -> Doanh thu ghi nhận trên Dashboard CEO]
-```
+### BƯỚC 5: HƯỚNG DẪN QUẢN LÝ KHO HÀNG & NHẬP XUẤT THIẾT BỊ
+1. Bấm vào mục **"Kho Hàng & Thiết Bị"**.
+2. **Theo dõi tồn kho:**
+   - Nhìn nhanh số lượng tồn, giá vốn, giá bán niêm yết của từng sản phẩm.
+   - Hệ thống tự gắn nhãn màu: Xanh lá (An toàn), Vàng (Cần nhập gấp - khi tồn dưới mức tối thiểu), Đỏ (Hết hàng).
+3. **Thao tác nhanh trên sản phẩm:**
+   - Bấm nút **"Nhập/Xuất"**: Nhập số lượng và lý do (Ví dụ: Nhập hàng dự trữ đợt mới, hoặc Xuất hàng lắp dự án Karaoke) để cộng/trừ số lượng kho tức thì.
+   - Bấm nút **"Sửa"**: Sửa lại giá bán, giá nhập khi hãng điều chỉnh bảng giá.
+   - Bấm nút **"Xóa"**: Xóa các mặt hàng không còn kinh doanh.
+   - Bấm **"+ Thêm Thiết Bị Mới"** góc trên để tạo sản phẩm mới vào danh mục.
 
 ---
 
-## 6. HƯỚNG DẪN QUẢN TRỊ HỆ THỐNG, SAO LƯU & BẢO TRÌ SERVER
-
-### 6.1. Quản Lý Dịch Vụ Bằng Docker
-Hệ thống được đóng gói hoàn chỉnh bằng Docker Compose, triển khai tại máy chủ Linux/Windows:
-
-- **Khởi động toàn bộ hệ thống:**
-  ```bash
-  docker compose up -d
-  ```
-- **Kiểm tra trạng thái các container:**
-  ```bash
-  docker compose ps
-  ```
-- **Xem nhật ký hoạt động (Logs):**
-  ```bash
-  docker compose logs -f backend
-  docker compose logs -f frontend
-  ```
-- **Khởi động lại một dịch vụ:**
-  ```bash
-  docker compose restart backend
-  ```
-
-### 6.2. Sao Lưu Cơ Sở Dữ Liệu (Backup Database)
-Tệp cơ sở dữ liệu SQLite được lưu tại `backend/phucthanh.db`.
-- **Lệnh sao lưu thủ công:**
-  ```bash
-  # Tạo bản sao lưu kèm mốc thời gian
-  cp backend/phucthanh.db backend/backups/phucthanh_$(date +%Y%m%d_%H%M%S).db
-  ```
-- Định kỳ hàng tuần tải bản sao lưu về ổ cứng an toàn của công ty hoặc lưu trữ đám mây Google Drive.
-
-### 6.3. Quy Trình Cập Nhật Mã Nguồn (CI/CD)
-Hệ thống đã được thiết lập quy trình tích hợp liên tục:
-Mỗi khi có commit được đẩy lên nhánh `main` của kho lưu trữ GitHub (`https://github.com/Ryhtruly/PhucThanhAudio`), GitHub Actions sẽ tự động kiểm thử build và cập nhật phiên bản mới lên máy chủ mà không làm gián đoạn thời gian hoạt động.
+### BƯỚC 6: HƯỚNG DẪN THEO DÕI BÁO CÁO & BIỂU ĐỒ DOANH THU (DÀNH CHO CEO)
+1. Bấm vào mục **"Tổng Quan Điều Hành"**.
+2. **Theo dõi 3 con số quan trọng của doanh nghiệp:**
+   - **Doanh thu thực đạt:** Tiền từ các hợp đồng đã ký kết chính thức.
+   - **Dự thu Pipeline:** Số tiền từ các hợp đồng đang chờ ký duyệt hoặc cơ hội tiềm năng.
+   - **Báo giá đã phát hành:** Tổng số báo giá đang lưu hành trên thị trường.
+3. **Sử dụng bộ lọc:**
+   - Tại thanh công cụ bộ lọc, Ban Giám Đốc có thể chọn xem theo: *Toàn bộ quy mô*, *Chỉ xem tiền thực thu*, hoặc *Chỉ xem tiền chờ ký*.
+   - Lọc xem theo các tháng kinh doanh: Tháng 9/2026, Tháng 8/2026...
+   - Biểu đồ sóng uốn lượn sẽ chuyển động mượt mà phản ánh chính xác số liệu kinh doanh.
 
 ---
 
-## 7. BIÊN BẢN XÁC NHẬN BÀN GIAO
+### BƯỚC 7: CÁCH SỬ DỤNG FORM TƯ VẤN CÔNG CỘNG CHO KHÁCH HÀNG
+- Quý Công ty có thể copy đường link: [**https://phucthanhaudio.wiai.vn/intake**](https://phucthanhaudio.wiai.vn/intake)
+- Gửi link này cho khách hàng qua Zalo/Facebook, hoặc gắn nút *"Đăng Ký Tư Vấn"* trên website chính `phucthanhaudio.vn`.
+- Khi khách hàng truy cập bằng điện thoại và gửi yêu cầu, thông tin sẽ tự động xuất hiện ngay lập tức trên hệ thống quản trị nội bộ để nhân viên kinh doanh gọi điện tư vấn.
 
-Hệ thống được xác nhận bàn giao đầy đủ, hoạt động ổn định, chính xác về số liệu kế toán và mẫu văn bản:
+---
 
-| ĐẠI DIỆN BÊN BÀN GIAO | ĐẠI DIỆN BÊN TIẾP NHẬN |
+## PHẦN 4: CHÍNH SÁCH BẢO HÀNH & HỖ TRỢ KỸ THUẬT
+
+Để đảm bảo hệ thống vận hành liên tục và ổn định phục vụ hoạt động sản xuất kinh doanh của Quý Công ty, Đội ngũ Phát triển cam kết:
+
+1. **Thời gian bảo hành hệ thống:** Hỗ trợ kỹ thuật và bảo hành vận hành miễn phí trong vòng **12 tháng** kể từ ngày bàn giao.
+2. **Phạm vi hỗ trợ:**
+   - Khắc phục các lỗi phát sinh trong quá trình vận hành (nếu có).
+   - Hướng dẫn lại cho nhân sự mới của Phúc Thanh Audio khi có thay đổi nhân sự.
+   - Tối ưu hóa tốc độ và sao lưu dữ liệu an toàn định kỳ.
+3. **Kênh tiếp nhận hỗ trợ 24/7:**
+   - Kỹ sư phụ trách kỹ thuật: Hỗ trợ trực tiếp qua Zalo / Hotline kỹ thuật.
+   - Thời gian phản hồi: Xử lý sự cố trong vòng **30 phút - 2 giờ** kể từ khi nhận được yêu cầu.
+
+---
+
+## PHẦN 5: XÁC NHẬN NGHIỆM THU & BÀN GIAO
+
+Hai bên đã cùng nhau kiểm tra toàn bộ 8 phân hệ nghiệp vụ trên môi trường thực tế, xác nhận hệ thống đã được cài đặt hoàn tất, số liệu kế toán và mẫu in Word hoạt động chính xác 100% theo đúng yêu cầu đề ra.
+
+Biên bản này được lập thành 02 bản có giá trị pháp lý như nhau, mỗi bên giữ 01 bản để làm căn cứ theo dõi và bảo hành hệ thống.
+
+| ĐẠI DIỆN BÊN BÀN GIAO | ĐẠI DIỆN BÊN TIẾP NHẬN (KHÁCH HÀNG) |
 |:---:|:---:|
-| *(Đã ký & Chuyển giao)* | *(Đã nghiệm thu)* |
-| **Kỹ Sư Trưởng Dự Án** | **Ban Giám Đốc Phúc Thanh Audio** |
+| *(Ký, ghi rõ họ tên)* | *(Ký, đóng dấu)* |
+| <br><br><br><br> | <br><br><br><br> |
+| **TRƯỞNG NHÓM KỸ THUẬT DỰ ÁN** | **BAN GIÁM ĐỐC PHÚC THANH AUDIO** |
