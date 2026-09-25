@@ -23,7 +23,8 @@ def create_quote(
     warranty_notes: str = "Bảo hành chính hãng 24 tháng theo tiêu chuẩn nhà sản xuất.",
     payment_notes: str = "Tạm ứng 40% khi đặt hàng, 60% sau khi nghiệm thu bàn giao.",
     special_notes: str = "Báo giá áp dụng chiết khấu đặc biệt cho dự án Phúc Thanh Audio.",
-    send_zbs: bool = False
+    send_zbs: bool = False,
+    vat_rate: float = 10.0
 ) -> Dict[str, Any]:
     items = items or []
     now = datetime.now()
@@ -86,8 +87,9 @@ def create_quote(
         else:
             order_discount = ck_val
 
+    rate_val = float(vat_rate) if vat_rate is not None else 10.0
     subtotal = max(0, items_total - order_discount)
-    vat = int(round(subtotal * 0.1)) if include_vat else 0
+    vat = int(round(subtotal * (rate_val / 100.0))) if (include_vat and rate_val > 0) else 0
     grand_total = subtotal + vat
     words = number_to_vietnamese_words(grand_total)
     
@@ -106,6 +108,8 @@ def create_quote(
         "{{PAYMENT_NOTES}}": payment_notes,
         "{{SPECIAL_NOTES}}": special_notes,
         "{{SALES_REPRESENTATIVE}}": sales_rep,
+        "{{VAT_RATE}}": f"{rate_val:g}%",
+        "{{VAT_DESC}}": f"Thuế GTGT ({rate_val:g}%)",
         "{{TOTAL_BEFORE_DISCOUNT}}": f"{items_total:,.0f} đ".replace(",", "."),
         "{{DISCOUNT_AMOUNT}}": f"{order_discount:,.0f} đ".replace(",", "."),
         "{{TOTAL_BEFORE_VAT}}": f"{subtotal:,.0f} đ".replace(",", "."),

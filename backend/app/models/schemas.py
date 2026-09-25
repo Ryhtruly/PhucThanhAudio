@@ -23,6 +23,7 @@ class ContractCreateRequest(BaseModel):
     total_amount: Optional[int] = 0
     include_vat: Optional[bool] = True
     price_includes_vat: Optional[bool] = False
+    vat_rate: Optional[float] = 10.0
     items: Optional[List[QuoteItemSchema]] = []
     payment_terms: Optional[str] = "Thanh toán 50% khi ký HĐ, 50% sau khi bàn giao nghiệm thu."
     delivery_date: Optional[str] = "Trong vòng 05 ngày kể từ ngày ký"
@@ -40,6 +41,7 @@ class QuoteCreateRequest(BaseModel):
     project_name: Optional[str] = "Trang bị hệ thống âm thanh Phúc Thanh"
     items: List[QuoteItemSchema]
     include_vat: Optional[bool] = True
+    vat_rate: Optional[float] = 10.0
     discount: Optional[int] = 0
     discount_percent: Optional[float] = 0
     chiet_khau: Optional[int] = 0

@@ -49,7 +49,8 @@ def api_create_contract(req: ContractCreateRequest):
         send_zbs=req.send_zbs or False,
         company_name=req.company_name,
         include_vat=req.include_vat if req.include_vat is not None else True,
-        price_includes_vat=req.price_includes_vat or False
+        price_includes_vat=req.price_includes_vat or False,
+        vat_rate=req.vat_rate if req.vat_rate is not None else 10.0
     )
     redis_client.delete("contracts_list")
     redis_client.delete("kpi_summary")
@@ -140,6 +141,7 @@ def api_create_quote(req: QuoteCreateRequest):
         project_name=req.project_name or "Trang bị âm thanh",
         items=[it.dict() for it in req.items],
         include_vat=req.include_vat,
+        vat_rate=req.vat_rate if req.vat_rate is not None else 10.0,
         discount=req.discount or 0,
         discount_percent=req.discount_percent or 0,
         chiet_khau=req.chiet_khau or 0,

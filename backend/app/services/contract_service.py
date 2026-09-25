@@ -21,7 +21,8 @@ def create_contract(
     send_zbs: bool = False,
     company_name: Optional[str] = None,
     include_vat: bool = True,
-    price_includes_vat: bool = False
+    price_includes_vat: bool = False,
+    vat_rate: float = 10.0
 ) -> Dict[str, Any]:
     # 1. Tra MST tự động từ VietQR API
     tax_info = lookup_tax_info(mst)
@@ -55,19 +56,21 @@ def create_contract(
         
     input_val = total_amount if (total_amount and total_amount > 0) else subtotal
 
-    if not include_vat:
+    rate_val = float(vat_rate) if vat_rate is not None else 10.0
+
+    if not include_vat or rate_val <= 0:
         subtotal = input_val
         vat = 0
         grand_total = subtotal
     elif price_includes_vat:
-        # Số tiền nhập vào đã bao gồm VAT trọn gói (không cộng thêm 10%)
+        # Số tiền nhập vào đã bao gồm VAT trọn gói (không cộng thêm rate_val%)
         grand_total = input_val
-        subtotal = int(round(grand_total / 1.1))
+        subtotal = int(round(grand_total / (1.0 + (rate_val / 100.0))))
         vat = grand_total - subtotal
     else:
-        # Số tiền nhập vào là trước thuế, hệ thống tự tính 10% VAT
+        # Số tiền nhập vào là trước thuế, hệ thống tự tính rate_val% VAT
         subtotal = input_val
-        vat = int(round(subtotal * 0.1))
+        vat = int(round(subtotal * (rate_val / 100.0)))
         grand_total = subtotal + vat
 
     words = number_to_vietnamese_words(grand_total)
@@ -94,6 +97,8 @@ def create_contract(
         "{{WARRANTY_MONTHS}}": str(warranty_months),
         "{{SPECIAL_TERMS}}": special_terms,
         "{{SALES_REPRESENTATIVE}}": sales_rep,
+        "{{VAT_RATE}}": f"{rate_val:g}%",
+        "{{VAT_DESC}}": f"Thuế GTGT ({rate_val:g}%)",
         "{{TOTAL_BEFORE_VAT}}": f"{subtotal:,.0f} đ".replace(",", "."),
         "{{TOTAL_VAT}}": f"{vat:,.0f} đ".replace(",", "."),
         "{{TOTAL_AMOUNT}}": f"{grand_total:,.0f} đ".replace(",", "."),

@@ -165,6 +165,7 @@ export default function App() {
     email: '',
     project_name: '',
     include_vat: true,
+    vat_rate: 10,
     send_zbs: true,
     items: []
   });
@@ -205,6 +206,7 @@ export default function App() {
     total_amount: 0,
     include_vat: true,
     price_includes_vat: false,
+    vat_rate: 10,
     warranty_months: 24,
     send_zbs: true
   });
@@ -769,7 +771,8 @@ export default function App() {
   // Tính toán minh bạch giá trị hợp đồng (Thuế VAT, Giá trọn gói hoặc Chưa thuế)
   const getContractCalc = () => {
     const raw = Number(contractForm.total_amount) || 0;
-    if (!contractForm.include_vat) {
+    const vatRate = Number(contractForm.vat_rate !== undefined ? contractForm.vat_rate : 10);
+    if (!contractForm.include_vat || vatRate <= 0) {
       return {
         subtotal: raw,
         vat: 0,
@@ -779,23 +782,23 @@ export default function App() {
     }
     if (contractForm.price_includes_vat) {
       const grandTotal = raw;
-      const subtotal = Math.round(grandTotal / 1.1);
+      const subtotal = Math.round(grandTotal / (1 + vatRate / 100));
       const vat = grandTotal - subtotal;
       return {
         subtotal,
         vat,
         grandTotal,
-        desc: 'Đã bao gồm VAT 10% (Giá trọn gói)'
+        desc: `Đã bao gồm VAT ${vatRate}% (Giá trọn gói)`
       };
     }
     const subtotal = raw;
-    const vat = Math.round(subtotal * 0.1);
+    const vat = Math.round(subtotal * (vatRate / 100));
     const grandTotal = subtotal + vat;
     return {
       subtotal,
       vat,
       grandTotal,
-      desc: 'Giá trước thuế (+ 10% VAT)'
+      desc: `Giá trước thuế (+ ${vatRate}% VAT)`
     };
   };
 
@@ -1136,7 +1139,8 @@ export default function App() {
   };
 
   const quoteSubtotal = quoteForm.items.reduce((acc, it) => acc + (it.price * it.quantity), 0);
-  const quoteVat = quoteForm.include_vat ? Math.round(quoteSubtotal * 0.1) : 0;
+  const quoteVatRate = Number(quoteForm.vat_rate !== undefined ? quoteForm.vat_rate : 10);
+  const quoteVat = (quoteForm.include_vat && quoteVatRate > 0) ? Math.round(quoteSubtotal * (quoteVatRate / 100)) : 0;
   const quoteGrandTotal = quoteSubtotal + quoteVat;
 
   // ==================== TÍNH TOÁN DỮ LIỆU ĐÃ LỌC & SẮP XẾP ====================
@@ -2701,13 +2705,62 @@ export default function App() {
                 </div>
 
                 <div style={{ background: '#F8FAFC', padding: 14, borderRadius: 12, marginBottom: 18, border: '1px solid #E2E8F0' }}>
+                  {/* TÙY CHỌN THUẾ VAT CHO BÁO GIÁ */}
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 10, paddingBottom: 10, marginBottom: 10, borderBottom: '1px dashed #CBD5E1' }}>
+                    <label style={{ display: 'inline-flex', alignItems: 'center', gap: 8, cursor: 'pointer', fontSize: 13, fontWeight: 700, color: '#0F172A' }}>
+                      <input
+                        type="checkbox"
+                        checked={quoteForm.include_vat}
+                        onChange={e => setQuoteForm({ ...quoteForm, include_vat: e.target.checked })}
+                        style={{ width: 16, height: 16, accentColor: '#D31027' }}
+                      />
+                      Xuất Hóa Đơn Thuế GTGT (VAT)
+                    </label>
+
+                    {quoteForm.include_vat && (
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap' }}>
+                        {[10, 8, 5, 0].map(r => (
+                          <button
+                            key={r}
+                            type="button"
+                            onClick={() => setQuoteForm({ ...quoteForm, vat_rate: r })}
+                            style={{
+                              padding: '3px 8px',
+                              borderRadius: 5,
+                              fontSize: 11.5,
+                              fontWeight: 700,
+                              cursor: 'pointer',
+                              border: (quoteForm.vat_rate === r) ? '1px solid #D31027' : '1px solid #CBD5E1',
+                              background: (quoteForm.vat_rate === r) ? '#FEF2F2' : '#FFFFFF',
+                              color: (quoteForm.vat_rate === r) ? '#D31027' : '#475569'
+                            }}
+                          >
+                            {r}%
+                          </button>
+                        ))}
+                        <div style={{ display: 'inline-flex', alignItems: 'center', gap: 3 }}>
+                          <input
+                            type="number"
+                            min="0"
+                            max="100"
+                            step="0.5"
+                            value={quoteForm.vat_rate !== undefined ? quoteForm.vat_rate : 10}
+                            onChange={e => setQuoteForm({ ...quoteForm, vat_rate: parseFloat(e.target.value) || 0 })}
+                            style={{ width: 48, padding: '3px 5px', fontSize: 11.5, fontWeight: 700, textAlign: 'center', border: '1px solid #CBD5E1', borderRadius: 5 }}
+                          />
+                          <span style={{ fontSize: 11.5, fontWeight: 700, color: '#475569' }}>%</span>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+
                   <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 6, fontSize: 13, color: '#475569' }}>
                     <span>Cộng tiền hàng:</span>
                     <span style={{ fontWeight: 700, color: '#0F172A' }}>{quoteSubtotal.toLocaleString('vi-VN')} đ</span>
                   </div>
                   <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 6, fontSize: 13, color: '#475569' }}>
-                    <span>Thuế GTGT (VAT 10%):</span>
-                    <span style={{ fontWeight: 700, color: '#0F172A' }}>{quoteVat.toLocaleString('vi-VN')} đ</span>
+                    <span>Thuế GTGT (VAT {quoteForm.include_vat ? `${quoteVatRate}%` : '0%'}):</span>
+                    <span style={{ fontWeight: 700, color: quoteVat > 0 ? '#B45309' : '#0F172A' }}>{quoteVat.toLocaleString('vi-VN')} đ</span>
                   </div>
                   <div style={{ display: 'flex', justifyContent: 'space-between', paddingTop: 8, borderTop: '1px solid #CBD5E1', fontSize: 15, fontWeight: 900, color: '#D31027' }}>
                     <span>TỔNG CỘNG:</span>
@@ -3261,8 +3314,45 @@ export default function App() {
                       onChange={e => setContractForm({ ...contractForm, include_vat: e.target.checked })}
                       style={{ width: 16, height: 16, accentColor: '#D31027' }}
                     />
-                    Xuất Hóa Đơn Thuế GTGT (VAT 10%)
+                    Xuất Hóa Đơn Thuế GTGT (VAT)
                   </label>
+
+                  {contractForm.include_vat && (
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
+                      <span style={{ fontSize: 12, fontWeight: 600, color: '#475569' }}>Thuế suất:</span>
+                      {[10, 8, 5, 0].map(rate => (
+                        <button
+                          key={rate}
+                          type="button"
+                          onClick={() => setContractForm({ ...contractForm, vat_rate: rate })}
+                          style={{
+                            padding: '4px 10px',
+                            borderRadius: 6,
+                            fontSize: 12,
+                            fontWeight: 700,
+                            cursor: 'pointer',
+                            border: (contractForm.vat_rate === rate) ? '1px solid #D31027' : '1px solid #CBD5E1',
+                            background: (contractForm.vat_rate === rate) ? '#FEF2F2' : '#FFFFFF',
+                            color: (contractForm.vat_rate === rate) ? '#D31027' : '#475569'
+                          }}
+                        >
+                          {rate}% {rate === 10 ? '(Chuẩn)' : rate === 8 ? '(Ưu đãi)' : ''}
+                        </button>
+                      ))}
+                      <div style={{ display: 'inline-flex', alignItems: 'center', gap: 4 }}>
+                        <input
+                          type="number"
+                          min="0"
+                          max="100"
+                          step="0.5"
+                          value={contractForm.vat_rate !== undefined ? contractForm.vat_rate : 10}
+                          onChange={e => setContractForm({ ...contractForm, vat_rate: parseFloat(e.target.value) || 0 })}
+                          style={{ width: 55, padding: '4px 6px', fontSize: 12, fontWeight: 700, textAlign: 'center', border: '1px solid #CBD5E1', borderRadius: 6 }}
+                        />
+                        <span style={{ fontSize: 12, fontWeight: 700, color: '#475569' }}>%</span>
+                      </div>
+                    </div>
+                  )}
 
                   {contractForm.include_vat && (
                     <div style={{ display: 'flex', gap: 8 }}>
@@ -3280,7 +3370,7 @@ export default function App() {
                           color: contractForm.price_includes_vat ? '#475569' : '#D31027'
                         }}
                       >
-                        Giá chưa thuế (+ 10% VAT)
+                        Giá chưa thuế (+ {contractForm.vat_rate !== undefined ? contractForm.vat_rate : 10}% VAT)
                       </button>
                       <button
                         type="button"
@@ -3296,7 +3386,7 @@ export default function App() {
                           color: contractForm.price_includes_vat ? '#166534' : '#475569'
                         }}
                       >
-                        Giá trọn gói (Đã gồm VAT)
+                        Giá trọn gói (Đã gồm VAT {contractForm.vat_rate !== undefined ? contractForm.vat_rate : 10}%)
                       </button>
                     </div>
                   )}
@@ -3320,7 +3410,9 @@ export default function App() {
                         </div>
                       </div>
                       <div>
-                        <span style={{ fontSize: 11, color: '#64748B', fontWeight: 600, textTransform: 'uppercase' }}>TIỀN THUẾ VAT (10%)</span>
+                        <span style={{ fontSize: 11, color: '#64748B', fontWeight: 600, textTransform: 'uppercase' }}>
+                          TIỀN THUẾ VAT ({contractForm.include_vat ? `${contractForm.vat_rate !== undefined ? contractForm.vat_rate : 10}%` : '0%'})
+                        </span>
                         <div style={{ fontSize: 15, fontWeight: 800, color: calc.vat > 0 ? '#B45309' : '#64748B', marginTop: 2 }}>
                           {calc.vat > 0 ? `+${calc.vat.toLocaleString('vi-VN')} đ` : '0 đ'}
                         </div>
